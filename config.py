@@ -13,8 +13,8 @@ import os
 from PIL import ImageFont
 
 ############################## Debugging ##############################
-DATA_DISPLAY_W = 2
-DATA_DISPLAY_H = 3
+DATA_DISPLAY_W = 3
+DATA_DISPLAY_H = 4
 
 ############################## Testing ##############################
 IMAGE_PATH = "./test/"
@@ -33,10 +33,15 @@ MIN_CONFIDENCE = 0.2
 SHOW_ENGLISH_LOG = False
 SHOW_ARABIC_LOG = False
 ############################## Visual ##############################
-FONT = cv2.FONT_HERSHEY_SIMPLEX
+FONT = cv2.FONT_HERSHEY_DUPLEX
+FONT_SCALE = 1
+FONT_THICKNESS = 1
+
 ARABIC_FONT = ImageFont.truetype("arial.ttf", 16)
 BBOX_COLOR = (255, 0, 255)
-TEXT_COLOR = (255, 255, 255)
+TEXT_COLOR = (255, 0, 0)
+
+TEXT_BACKGROUND_COLOR = (0, 0, 0, 128)
 
 ############################## Metadata ##############################
 _METADATA = {
