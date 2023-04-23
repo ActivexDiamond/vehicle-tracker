@@ -72,7 +72,6 @@ print(f"Imported darknet==0.2.5.4")
 
 ############################## Custom Modules ##############################
 import config
-import helpers
 
 ############################## Main Flow ##############################
 #Disable paddle's excessive logging.
@@ -120,22 +119,99 @@ for i in range(0, len(images)):
     for bbox in bboxes:
         # Crop plate out of original image.
         bbox = [bbox[0], bbox[1], bbox[2] + bbox[0], bbox[3] + bbox[1]]
-        plate_image = helpers.crop(image, bbox)
+        plate_image = crop(image, bbox)
         if plate_image.shape[0] <= 0 or plate_image.shape[1] <= 0:
             print(f"Plate image too small. Plate shape: {plate_image.shape}")
             continue
-        ocr_text, is_arabic = ocr.performOcr(plate_image)
 
+        # Perform OCR.
+        english_texts = []
+        english_scores = []
+        english_confidence = 0
+        english_result = english_ocr.ocr(plate_image, cls=True)
+        #Concat all text into a single string.
+        for j in range(len(english_result)):
+            r = english_result[j]
+            for line in r:
+                english_texts.append(line[1][0])
+                english_scores.append(line[1][1])
+
+        #Identical to the above, but for Arabic.
+        arabic_texts = []
+        arabic_scores = []
+        arabic_confidence = 0
+        arabic_result = arabic_ocr.ocr(plate_image, cls=True)
+        #Concat all text into a single string.
+        for k in range(len(arabic_result)):
+            r = arabic_result[k]
+            for line in r:
+                arabic_texts.append(line[1][0])
+                arabic_scores.append(line[1][1])
+
+        #If any OCRs occurred; compute their mean.
+        if len(english_scores) > 0:
+            english_confidence = sum(english_scores) / len(english_scores)
+        if len(arabic_scores) > 0:
+            arabic_confidence = sum(arabic_scores) / len(arabic_scores)
+
+        #Fallbakc in case OCR failed.
+        ocr_text = "Unknown"
+        is_arabic = False
+
+        # Check scores to deduce text language.
+        if english_confidence >= arabic_confidence and english_confidence >= config.MIN_CONFIDENCE:
+            ocr_text = " ".join(english_texts)
+        elif arabic_confidence >= config.MIN_CONFIDENCE:
+            ocr_text = " ".join(arabic_texts)
+            is_arabic = True
+
+        
         #Draw the bounding-box of the license plate.
         cv2.rectangle(image, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), config.BBOX_COLOR, 2)
 
         if is_arabic:
-            helpers.drawArabicText(image, ocr_text, bbox)
+            #Remove all white space.
+            ar_text = ocr_text.translate({ord(c): None for c in string.whitespace})
+
+            #Reverse direction (improves visibility in images.)
+            ar_text = "".join(reversed(ar_text))
+
+            #Seperate all letters (improves visibility in images.)
+            ar_text = " ".join(ar_text)
+
+            #Convert into bidi text.
+            print(f"Will draw Arabic text {ar_text}")
+            reshaped_text = arabic_reshaper.reshape(ar_text)
+            bidi_text = get_display(reshaped_text)
+
+            #Convert image to PIL.
+            pil_image = Image.fromarray(image)
+            draw = ImageDraw.Draw(pil_image)
+
+            #Draw rectangle behind text.
+            (_, baseline), _ = config.ARABIC_FONT.font.getsize(ar_text)
+            (x, y) = tuple(map(int, [int(bbox[0]), int(bbox[1])]))
+            text_bbox = draw.textbbox((x, y), ar_text, font=config.ARABIC_FONT)
+            draw.rectangle(text_bbox, fill=config.TEXT_BACKGROUND_COLOR)
+
+            #Draw text.
+            draw.text((x, y), bidi_text, font=config.ARABIC_FONT, fill="red")
+
+            #Convert back numpy-style image.
+            image = np.array(pil_image)
         else:
-            helpers.drawEnglishText(image, ocr_text, bbox)
+            #Draw rectangle behind text.
+            (text_w, text_h), baseline = cv2.getTextSize(ocr_text, config.FONT, config.FONT_SCALE, config.FONT_THICKNESS)
+            (x, y) = tuple(map(int, [int(bbox[0]), int(bbox[1])]))
+            cv2.rectangle(image, (x, y), (x + text_w, y - text_h), config.TEXT_BACKGROUND_COLOR, -1)
+
+            #Draw text.
+            print(f"Will draw English text {ocr_text}")
+            cv2.putText(image, ocr_text, (x, y), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
+        #Label images.
+        h, w, _ = image.shape
+        cv2.putText(image, f"ID:{i}", (0, h - 20), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
     #Once all looping is done, the final state of the image is stored separately.
-    h, w, _ = image.shape
-    cv2.putText(image, f"ID:{i}", (0, h - 20), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
     processed_images.append(image)
 
 #Prepare plot and process images.
