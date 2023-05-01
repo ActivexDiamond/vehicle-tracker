@@ -71,8 +71,75 @@ print(f"Imported darknet==0.2.5.4")
 
 
 ############################## Custom Modules ##############################
-import config
+import old_config as config
 
+############################## Helpers ##############################
+def yolo_det(frame, config_file, data_file, batch_size, weights, 
+             threshold, network, class_names, class_colors):
+    #Used to track execution time.
+    prev_time = time.time()
+
+    #Get some stats about the ML network.
+    width = darknet.network_width(network)
+    height = darknet.network_height(network)
+    #Prepare buffer.
+    darknet_image = darknet.make_image(width, height, 3)
+
+    #Minimal preprocessing.
+    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    image_resized = cv2.resize(image_rgb, (width, height))
+
+    #Copy buffer.
+    darknet.copy_image_from_bytes(darknet_image, image_resized.tobytes())
+    #Detect license plates.
+    detections = darknet.detect_image(network, class_names, darknet_image, thresh=threshold)
+    #Free up used memory.
+    darknet.free_image(darknet_image)
+
+    #Mark the license plate on the image with an outline.
+    image = darknet.draw_boxes(detections, image_resized, class_colors)
+
+    #Compute current execution time.
+    det_time = time.time() - prev_time
+    fps = int(1/(time.time() - prev_time))
+
+    #Prepare output image.
+    out_size = frame.shape[:2]
+    in_size = image_resized.shape[:2]
+    coord, scores = resize_bbox(detections, out_size, in_size)
+    image_with_plate = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    return image_with_plate, coord, scores, det_time
+
+#Converts bounding-boxes into image-coords.
+def resize_bbox(detections, out_size, in_size):
+
+    coord = []
+    scores = []
+
+    for det in detections:
+        points = list(det[2])
+        conf = det[1]
+         
+        xmin, ymin, xmax, ymax = darknet.bbox2points(points)
+        y_scale = float(out_size[0]) / in_size[0]
+        x_scale = float(out_size[1]) / in_size[1]
+        ymin = int(y_scale * ymin)
+        ymax = int(y_scale * ymax)
+        xmin = int(x_scale * xmin) if int(x_scale * xmin) > 0 else 0
+        xmax = int(x_scale * xmax)
+           
+        final_points = [xmin, ymin, xmax-xmin, ymax-ymin]
+        scores.append(conf)
+        coord.append(final_points)
+    
+    return coord, scores
+
+#Simple cropping wrapper.
+def crop(image, coord):
+    cr_img = image[int(coord[1]):int(coord[3]), int(coord[0]):int(coord[2])]
+    return cr_img
+
+     
 ############################## Main Flow ##############################
 #Disable paddle's excessive logging.
 logging.getLogger("paddle").setLevel(logging.WARN)

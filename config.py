@@ -13,11 +13,13 @@ import os
 from PIL import ImageFont
 
 ############################## Debugging ##############################
+DEBUG_PREPROCESSING = False
+
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
 
 ############################## Testing ##############################
-IMAGE_PATH = "./test/"
+IMAGE_PATH = "./test/images2/"
 
 ############################## YOLO/Darknet ##############################
 CONFIG_FILE = "yolov4-obj.cfg"
@@ -42,6 +44,19 @@ BBOX_COLOR = (255, 0, 255)
 TEXT_COLOR = (255, 0, 0)
 
 TEXT_BACKGROUND_COLOR = (0, 0, 0, 128)
+
+############################## Speed ##############################
+MAX_UNSEEN = 10         #frames
+MAX_DISTANCE = 175      #pxs
+TRACKING_FRAMES = 4
+SPEED_CONFIDENCE_THRESHOLD = 0.4
+
+FRAME_WIDTH = 400       #pxs
+SPEED_ZONES = {"A": 120, "B": 160, "C": 200, "D": 240}
+WORLD_DISTANCE = 16     #meters
+SPEED_LIMIT = 15        #mph
+
+SPEED_CSV_FILE = "speed/log.csv"
 
 ############################## Metadata ##############################
 _METADATA = {

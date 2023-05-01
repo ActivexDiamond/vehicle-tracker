@@ -1,0 +1,58 @@
+############################## Dependencies ##############################
+## Native
+import time
+import os
+import string
+import sys
+
+##Fix for protobuf version incompat.
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+
+print("Imported built-in stuff.")
+
+import tensorflow
+print(f"Imported tensorflow=={tensorflow.__version__}")
+
+import cv2
+print(f"Imported cv2=={cv2.__version__}")
+
+import numpy as np
+print(f"Imported numpy=={np.__version__}")
+
+import PIL
+from PIL import Image, ImageDraw
+print(f"Imported PIL=={PIL.__version__}")
+
+import arabic_reshaper
+print(f"Imported arabic_reshaper=={arabic_reshaper.__version__}")
+
+from bidi.algorithm import get_display
+print("Imported bidi==0.4.2")
+
+import matplotlib
+from matplotlib import pyplot
+print(f"Imported matplotlib=={matplotlib.__version__}")
+
+from deep_sort.application_util import preprocessing
+from deep_sort.deep_sort import nn_matching
+from deep_sort.deep_sort.detection import Detection
+from deep_sort.deep_sort.tracker import Tracker
+from deep_sort.tools_deepsort import generate_detections as gdet
+print(f"Imported deep_sort==latest")
+
+import paddleocr
+from paddleocr import PaddleOCR
+print(f"Imported paddleocr=={paddleocr.__version__}")
+
+DARKNET_PATH = os.getcwd() + "/darknet/"
+print("DARKNET_PATH=" + DARKNET_PATH)
+sys.path.insert(1, DARKNET_PATH)
+
+import darknet
+#from darknet_images import load_images
+#from darknet_images import image_detection
+print("Imported darknet==0.2.5.4")
+
+
+############################## Custom Modules ##############################
+import config
