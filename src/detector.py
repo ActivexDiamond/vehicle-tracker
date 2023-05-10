@@ -27,7 +27,7 @@ import config
 import helpers
 
 ############################## Load Darknet NN ##############################
-network, class_names, class_colors = darknet.load_network(config.CONFIG_FILE,
+network, classNames, classColors = darknet.load_network(config.CONFIG_FILE,
         config.DATA_FILE,
         config.WEIGHTS_FILE,
         batch_size=config.BATCH_SIZE)
@@ -38,37 +38,37 @@ network, class_names, class_colors = darknet.load_network(config.CONFIG_FILE,
 #config.WEIGHTS_FILE,
 
 ############################## YOLO Detection ##############################
-def yolo_det(frame):
+def yoloDet(frame):
     # Used to track execution time.
-    prev_time = time.time()
+    prevTime = time.time()
 
     # Get some stats about the ML network.
     width = darknet.network_width(network)
     height = darknet.network_height(network)
     # Prepare buffer.
-    darknet_image = darknet.make_image(width, height, 3)
+    darknetImage = darknet.make_image(width, height, 3)
 
     # Minimal preprocessing.
-    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image_resized = cv2.resize(image_rgb, (width, height))
+    imageRgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    imageResized = cv2.resize(imageRgb, (width, height))
 
     # Copy buffer.
-    darknet.copy_image_from_bytes(darknet_image, image_resized.tobytes())
+    darknet.copy_image_from_bytes(darknetImage, imageResized.tobytes())
     # Detect license plates.
-    detections = darknet.detect_image(network, class_names, darknet_image,
+    detections = darknet.detect_image(network, classNames, darknetImage,
                                       thresh=config.CONFIDENCE_THRESHOLD)
     # Free up used memory.
-    darknet.free_image(darknet_image)
+    darknet.free_image(darknetImage)
 
     # Mark the license plate on the image with an outline.
-    image = darknet.draw_boxes(detections, image_resized, class_colors)
+    image = darknet.draw_boxes(detections, imageResized, classColors)
 
     # Compute current execution time.
-    det_time = time.time() - prev_time
+    detTime = time.time() - prevTime
 
     # Prepare output image.
-    out_size = frame.shape[:2]
-    in_size = image_resized.shape[:2]
-    coord, scores = helpers.resize_bbox(detections, out_size, in_size)
-    image_with_plate = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    return image_with_plate, coord, scores, det_time
+    outSize = frame.shape[:2]
+    inSize = imageResized.shape[:2]
+    coord, scores = helpers.resizeBbox(detections, outSize, inSize)
+    imageWithPlate = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    return imageWithPlate, coord, scores, detTime
