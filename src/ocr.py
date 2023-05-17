@@ -29,71 +29,34 @@ arabicReader = Reader(["ar"], gpu=-1 > 0)
 ############################## OCR Helpers ##############################
 def performBilingualOcr(image):
     # Perform OCR.
-    englishTexts = []
-    englishScores = []
-    englishConfidence = 0
-    englishResult = englishOcr.ocr(image, cls=True)
-    # Concat all text into a single string.
-    for j in range(len(englishResult)):
-        r = englishResult[j]
-        for line in r:
-            englishTexts.append(line[1][0])
-            englishScores.append(line[1][1])
-
-    # Identical to the above, but for Arabic.
-    arabicTexts = []
-    arabicNumbers = []
-    arabicScores = []
-    arabicConfidence = 0
-    arabicPaddleResult = arabicOcr.ocr(image, cls=True)
-    arabicReader = Reader(["ar"], gpu=-1 > 0)
-    arabicReaderResult = arabicReader.readtext(image)
+    enResult = englishOcr.ocr(image, cls=True)
+    arResult = arabicOcr.ocr(image, cls=True)
     
-    # Concat all text into a single string.
-    # For PaddleOCR, only grab plate text.
-    for k in range(len(arabicPaddleResult)):
-        r = arabicPaddleResult[k]
-        for line in r:
-            string = line[1][0]
-            # If string contains MORE than one Arabic letter, consider it
-            # the plate text. 
-            arabicLetterCount = 0
-            for char in string:
-                if any(char == letter for letter in helpers.ARABIC_LETTERS):
-                    arabicLetterCount += 1
-            if arabicLetterCount > 1:
-                arabicTexts.append(string)    
-                arabicScores.append(line[1][1])
+    # Format paddle string into friendlier format.
+    enTexts, enNumbers, enScores = helpers.formatPaddleResult(enResult)
+    arTexts, arNumbers, arScores = helpers.formatPaddleResult(arResult)
     
-    # For Reader, only grab plate number.
-    for k in range(len(arabicReaderResult)):
-        r = arabicReaderResult[k]
-        string = r[1]
-        # If string contains LESS than one Arabic letter, consider it
-        # the plate number. 
-        arabicLetterCount = 0
-        for char in string:
-            if any(char == letter for letter in helpers.ARABIC_LETTERS):
-                arabicLetterCount += 1
-        if arabicLetterCount <= 1:
-            arabicNumbers.append(string)    
-            arabicScores.append(r[2])
-                
-    # If any OCRs occurred; compute their mean.
-    if len(englishScores) > 0:
-        englishConfidence = sum(englishScores) / len(englishScores)
-    if len(arabicScores) > 0:
-        arabicConfidence = sum(arabicScores) / len(arabicScores)
+    # Check if OCRs occured between computing their means.
+    enConfidence = 0
+    if len(enScores) > 0:
+        enConfidence = sum(enScores) / len(enScores)
+    arConfidence = 0
+    if len(arScores) > 0:
+        arConfidence = sum(arScores) / len(arScores)
 
-    # Fallbakc in case OCR failed.
+    # Fallback in case OCR failed.
     ocrText = "Unknown"
     isArabic = False
 
     # Check scores to deduce text language.
-    if englishConfidence >= arabicConfidence and englishConfidence >= config.MIN_CONFIDENCE:
-        ocrText = " ".join(englishTexts)
-    elif arabicConfidence >= config.MIN_CONFIDENCE:
-        ocrText = " ".join(arabicTexts) + "=====" + " ".join(arabicNumbers)
+    if enConfidence >= arConfidence and enConfidence >= config.MIN_CONFIDENCE:
+        ocrText = " ".join(enTexts) + " ".join(enNumbers)
+    elif arConfidence >= config.MIN_CONFIDENCE:
+        if len(enNumbers) > 1:
+            translatedNumbers = helpers.translateNumbersToArabic(enNumbers)
+            ocrText = " ".join(arTexts) + " ".join(translatedNumbers)
+        else:
+            ocrText = " ".join(arTexts) + " ".join(arNumbers)
         isArabic = True
     
     return ocrText, isArabic

@@ -34,6 +34,7 @@ from PIL import ImageFont
 
 ############################## Debugging ##############################
 DEBUG_PREPROCESSING = False
+DEBUG_VIDEO = True
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
@@ -72,6 +73,16 @@ VIOLATION_PLATE_PATH = "./output/"
 
 MIN_CAR_SIZE = 1000
 
+#Displacement, between 2 frames, below which to consider an object is the same 
+#   as the one detected last frame.
+MAX_DISPLACEMENT = 65
+
+#Displacement, between 2 frames, below which to consider an object is the still.
+MAX_PARKED_DISPLACEMENT = 20
+
+#Time, in seconds, before a still-car is considered parked.
+MAX_PARK_TIME = 2
+
 if not os.path.exists(VIOLATION_IMAGE_PATH):
     os.makedirs(VIOLATION_IMAGE_PATH)
 if not os.path.exists(VIOLATION_PLATE_PATH):
@@ -87,17 +98,23 @@ LINE_Y_OFFSET = 20
 #To calculate this, you need a vehicle with a known speed (km/h).
 #Compute its time passing (seconds) between lines ENTRY and EXIT,
 #   this value is then equal to speed * time.
-LINES_DISTANCE = 214.15
+LINES_DISTANCE = 59.1
 
-#Displacement, between 2 frames, below which to consider an object is the same 
-#   as the one detected last frame.
-MAX_DISPLACEMENT = 65
+
 
 #If the video has extra noise/objects beyond the car path,
 #   this can be used to crop the region of interest.
 #Comment it out to use the full frame.
 FRAME_ROI = [50, 540, 200, 960]
     
+############################## Speed - Video Specific ##############################
+#VIDEO_PATH = "./test/videos1/IMG_0102.mp4"
+#ENTRY_LINE_Y = 410 - 100
+#EXIT_LINE_Y = 235 - 100
+#LINE_Y_OFFSET = 15
+
+#LINES_DISTANCE = 45
+
 ############################## Metadata ##############################
 _METADATA = {
     "TITLE": "Traffic Watcher",

@@ -10,7 +10,6 @@ Created on Sun Apr 23 22:03:49 2023
 ############################## Dependencies ##############################
 #Native
 import math
-import time
 
 #Image Manipulation
 import cv2
@@ -20,16 +19,18 @@ import numpy
 
 ############################## Custom Modules ##############################
 from Car import Car
+import trafficLight
 import config
 import helpers
 
 ############################## CarTracker Class ##############################
 class CarTracker:
-    
     #Violation types.
     VTYPE_SPEEDING = "Driving over the speed limit!"
     VTYPE_REVERSING = "Driving in the wrong direction!"
     VTYPE_PARKING = "Illegally parked!"
+    VTYPE_RED_LIGHT = "Passed red light!"
+    
     def __init__(self):
         #List of registered cars.
         self.cars = []
@@ -48,7 +49,7 @@ class CarTracker:
     def processVideo(self, path):
         print(f"Processing video: {path}")
         video = cv2.VideoCapture(path)
-        fps = video.get(cv2.MAX_PROP_FPS)
+        fps = video.get(cv2.CAP_PROP_FPS)
         frameCount = 0
         
         while True:
@@ -126,9 +127,9 @@ class CarTracker:
             
             #Display to user.
             cv2.imshow("roi", roi)
-            key = cv2.waitKey(self._DELAY - 10)
-            
+            key = cv2.waitKey(1) & 0xFF
             if key == 27: break
+            if key == ord('r'): trafficControl.onPress('r')
         video.release()
         cv2.destroyAllWindows()
 
@@ -143,7 +144,7 @@ class CarTracker:
                 carCx, carCy = car.getCenter()
                 dist = math.hypot(cx - carCx, cy - carCy)
 
-                if dist < config.MAX_DISPLACEMENT and dist > config.MAX_PARKED_DISPLACEMENT:
+                if dist < config.MAX_DISPLACEMENT:
                     #Then `car` is the same object as `obj`, which has been processed before.
                     newObj = False
                     
@@ -151,18 +152,20 @@ class CarTracker:
                     car.setBbox(obj)
                     if cy >= config.ENTRY_LINE_Y and cy <= config.ENTRY_LINE_Y + config.LINE_Y_OFFSET:
                         #print("Setting start time")
-                        car.setStartTime(time.time())
+                        car.setStartTime(frameCount)
                             
                     if cy >= config.EXIT_LINE_Y and cy <= config.EXIT_LINE_Y + config.LINE_Y_OFFSET:
                         #print("Setting end time")
-                        car.setEndTime(time.time())
+                        car.setEndTime(frameCount)
                         #print(f"[DEBUG] Total time: {car.getTime()} Speed {car.getSpeed()}")
-                elif dist < config.MAX_DISPLACEMENT:
-                    #Parking violations are issues immediately as to not resend
-                    #multiple per car. Once the car moves and goes out of sight,
-                    #it is removed as usual.
-                    car.setProcessed(True)
-                    self.onViolation(car, self.VTYPE_PARKING)
+                        
+                    if dist < config.MAX_PARKED_DISPLACEMENT and not car.isProcessed():
+                        car.incrementStillFrames()
+                        if car.getStillFrames() >=  config.MAX_PARK_TIME * fps:    
+                            car.setProcessed(True)
+                            self.onViolation(car, frame, self.VTYPE_PARKING)
+                    else:
+                        car.resetStillFrames()
                     
             #If newly detected object, create a car instance for it.
             if newObj:
@@ -199,6 +202,9 @@ class CarTracker:
 ############################## Violation Methods ##############################
     def checkViolation(self, car, frame):
         speed = car.getSpeed()
+        if not trafficLight.allowPassage() and speed != 0:
+            self.onViolation(car, frame, self.VTYPE_RED_LIGHT)
+            
         if speed > config.MAX_SPEED:
             self.onViolation(car, frame, self.VTYPE_SPEEDING)
         elif speed < 0:
@@ -232,4 +238,5 @@ class CarTracker:
     def _getCenter(self, obj):
         x, y, w, h = obj
         return (x * 2 + w) // 2, (y * 2 + h) // 2
+    
 ############################## Getters ##############################

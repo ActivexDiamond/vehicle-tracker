@@ -40,13 +40,21 @@ import ocr
 
 ############################## Constants ##############################
 ARABIC_LETTERS = list("ابجدهوزحطيكلمنسعفصقرشتثخذضظغء")
+ENGLISH_LETTERS = list("abcdefghijklmnopqrstuvwxyz")
+
+ARABIC_DIGITS = list("٠١٢٣٤٥٦٧٨٩")
+ENGLISH_DIGITS = list("0123456789")
+
+TRANSLATION_MAP = [
+    ENGLISH_LETTERS + list("gad") + ENGLISH_DIGITS,
+    ARABIC_LETTERS + ARABIC_DIGITS
+]
 
 ############################## Geometrey ##############################
 # Converts bounding-boxes into image-coords.
 def resizeBbox(detections, outSize, inSize):
     coord = []
     scores = []
-
     for det in detections:
         points = list(det[2])
         conf = det[1]
@@ -64,7 +72,6 @@ def resizeBbox(detections, outSize, inSize):
         coord.append(finalPoints)
 
     return coord, scores
-
 
 # Simple cropping wrapper.
 def crop(image, coord):
@@ -117,6 +124,37 @@ def drawEnglishText(image, ocr_text, bbox):
     cv2.putText(image, ocr_text, (x, y), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
     # Label images.
 
+############################## OCR-specific Helpers ##############################
+def formatPaddleResult(result):
+    texts, numbers, scores = [], [], []
+    for i in range(len(result)):
+        for line in result[i]:
+            string = line[1][0]
+            # If string contains MORE than one letter, consider it
+            # the plate text. 
+            letterCount = 0
+            for char in string:
+                if (any(char == letter for letter in ARABIC_LETTERS)
+                        or any(char == letter for letter in ENGLISH_LETTERS)):
+                    letterCount += 1
+            if letterCount > 1:
+                texts.append(string)    
+            else:
+                numbers.append(string)
+            scores.append(line[1][1])
+    return texts, numbers, scores
+
+#loop over str
+#if char one of map then new[char]=Map[0]->Map[1]
+def translateNumbersToArabic(english):
+    translated = english.copy()
+    for i, mapChar in enumerate(TRANSLATION_MAP[0]):
+        for j, char in enumerate(english):
+            if mapChar == char:
+                translated[j] = TRANSLATION_MAP[1][i]
+    return translated
+        
+        
 ############################## Plate Extraction Helpers ##############################
 def extractPlate(image, drawOnImage=True):
     # Extract (and mark) plate locations.

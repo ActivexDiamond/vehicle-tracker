@@ -15,10 +15,13 @@ print("Imported built-in stuff.")
 import cv2
 print(f"Imported cv2=={cv2.__version__}")
 
-if platform.system() == "Linux":
-    print("Performing cv2 SEGFAULT  work around since running on Linux.")
-    cv2.namedWindow('roi', 0)
-    cv2.resizeWindow("roi", 900, 900)
+# Config has to be imported here for workaround.
+import config
+if config.DEBUG_VIDEO:
+    if platform.system() == "Linux":
+        print("Performing cv2 SEGFAULT  work around since running on Linux.")
+        cv2.namedWindow('roi', 0)
+        cv2.resizeWindow("roi", 900, 900)
 
 import matplotlib
 from matplotlib import pyplot
@@ -28,7 +31,6 @@ print(f"Imported matplotlib=={matplotlib.__version__}")
 import paddleocr
 
 ############################## Custom Modules ##############################
-import config
 import helpers
 from CarTracker import CarTracker
 
@@ -80,8 +82,10 @@ def testVideo():
     
 ############################## Main Flow ##############################
 
-#testImagesDir()
-testVideo()
+if config.DEBUG_VIDEO:
+    testVideo()
+else:
+    testImagesDir()
 
 
 

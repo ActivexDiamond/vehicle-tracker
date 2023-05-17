@@ -16,13 +16,22 @@ import config
 class Car:
     INVALID_STATE = {}
     def __init__(self, bbox, fps):
-        self.startTime = -1
-        self.endTime = -1
         self.bbox = bbox
         self.fps = fps
-        self.processed = False
         
-############################## Setters ##############################        
+        self.startTime = -1
+        self.endTime = -1
+        
+        self.processed = False
+        self.stillFrames = 0
+        
+############################## Still Frames ##############################        
+    def incrementStillFrames(self):
+        self.stillFrames += 1
+    def resetStillFrames(self):
+        self.stillFrames = 0
+
+############################## Setters ##############################                
     def setProcessed(self, b):
         self.processed = b
     
@@ -64,3 +73,6 @@ class Car:
     def getCenter(self):
         x, y, w, h = self.bbox
         return (x * 2 + w) // 2, (y * 2 + h) // 2
+    
+    def getStillFrames(self):
+        return self.stillFrames
