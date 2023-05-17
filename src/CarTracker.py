@@ -25,8 +25,6 @@ import helpers
 
 ############################## CarTracker Class ##############################
 class CarTracker:
-    _FPS = 25
-    _DELAY = int(1e3 / (_FPS - 1))
     
     #Violation types.
     VTYPE_SPEEDING = "Driving over the speed limit!"
@@ -50,11 +48,14 @@ class CarTracker:
     def processVideo(self, path):
         print(f"Processing video: {path}")
         video = cv2.VideoCapture(path)
+        fps = video.get(cv2.MAX_PROP_FPS)
+        frameCount = 0
         
         while True:
             #Read the next frame.
             nxt, frame = video.read()
             if not nxt: break
+            frameCount += 1
             #print("Processing next frame.")
             
             #Scale down a bit, and get dims.
@@ -86,7 +87,7 @@ class CarTracker:
                     cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
                     
             #Compute speeds and check for violations.
-            self.processFrame(roi, objects)
+            self.processFrame(roi, objects, fps, frameCount)
             
             for car in self.cars:
                 x, y, w, h = car.getBbox()
@@ -116,6 +117,13 @@ class CarTracker:
             cv2.line(roi, (0, c), (w, c), color, stroke)
             cv2.line(roi, (0, d), (w, d), color, stroke)
             
+            #Draw fps
+            cv2.putText(roi, f"FPS: {fps}",(20, 20), 
+                        cv2.FONT_HERSHEY_PLAIN,
+                        1,
+                        (0, 0, 255),
+                        2)
+            
             #Display to user.
             cv2.imshow("roi", roi)
             key = cv2.waitKey(self._DELAY - 10)
@@ -124,7 +132,7 @@ class CarTracker:
         video.release()
         cv2.destroyAllWindows()
 
-    def processFrame(self, frame, objs):
+    def processFrame(self, frame, objs, fps, frameCount):
         #Loop over all objs in the current frame.
         #print("Looping over all objects an checking for speeds")
         for obj in objs:
@@ -135,7 +143,7 @@ class CarTracker:
                 carCx, carCy = car.getCenter()
                 dist = math.hypot(cx - carCx, cy - carCy)
 
-                if dist < config.MAX_DISPLACEMENT:
+                if dist < config.MAX_DISPLACEMENT and dist > config.MAX_PARKED_DISPLACEMENT:
                     #Then `car` is the same object as `obj`, which has been processed before.
                     newObj = False
                     
@@ -149,10 +157,17 @@ class CarTracker:
                         #print("Setting end time")
                         car.setEndTime(time.time())
                         #print(f"[DEBUG] Total time: {car.getTime()} Speed {car.getSpeed()}")
+                elif dist < config.MAX_DISPLACEMENT:
+                    #Parking violations are issues immediately as to not resend
+                    #multiple per car. Once the car moves and goes out of sight,
+                    #it is removed as usual.
+                    car.setProcessed(True)
+                    self.onViolation(car, self.VTYPE_PARKING)
+                    
             #If newly detected object, create a car instance for it.
             if newObj:
                 print("New object entered frame.")
-                self.cars.append(Car(obj))
+                self.cars.append(Car(obj, fps))
         
         #Once all processing is done, loop over all cars, check for any violations,
         #    if yes; issue onViolation callback.
@@ -186,10 +201,8 @@ class CarTracker:
         speed = car.getSpeed()
         if speed > config.MAX_SPEED:
             self.onViolation(car, frame, self.VTYPE_SPEEDING)
-        if speed < 0:
+        elif speed < 0:
             self.onViolation(car, frame, self.VTYPE_REVERSING)
-        if speed < 1 and speed > -1:
-            self.onViolation(car, frame, self.VTYPE_PARKING)
     
     def onViolation(self, car, frame, vtype):
         print(f"Got violation of type \"{vtype}\". speed={car.getSpeed()}")
@@ -207,7 +220,10 @@ class CarTracker:
         textPath = config.VIOLATION_PLATE_PATH + str(self.violationCount) + ".txt"
         file = open(textPath, "w")
         file.write("Violation: " + vtype + "\n")
-        file.write("Speed: " + str(car.getSpeed()) + "km/h\n")
+        
+        if vtype != self.VTYPE_PARKING:
+            file.write("Speed: " + str(car.getSpeed()) + "km/h\n")
+            
         plateText, img, isArabic = helpers.extractPlate(image, False)
         file.write("Plate Number: " + plateText + "\n")
         file.close()

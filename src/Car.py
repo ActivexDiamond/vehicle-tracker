@@ -15,10 +15,11 @@ import config
 ############################## Car Class ##############################
 class Car:
     INVALID_STATE = {}
-    def __init__(self, bbox):
+    def __init__(self, bbox, fps):
         self.startTime = -1
         self.endTime = -1
         self.bbox = bbox
+        self.fps = fps
         self.processed = False
         
 ############################## Setters ##############################        
@@ -46,13 +47,14 @@ class Car:
     def getTime(self):
         if not self.isComplete():
             return self.INVALID_STATE
-        return self.endTime - self.startTime
+        frameTime = 1 / self.fps
+        return (self.endTime - self.startTime) * frameTime
     
     def getSpeed(self):
         if not self.isComplete():
             return self.INVALID_STATE
         
-        t = self.getTime() * 2
+        t = self.getTime()
         if t == 0: return 0              #Div-by-zero guard.
         return int(config.LINES_DISTANCE / t)
             
