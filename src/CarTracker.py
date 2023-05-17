@@ -22,6 +22,7 @@ from Car import Car
 import trafficLight
 import config
 import helpers
+import messager
 
 ############################## CarTracker Class ##############################
 class CarTracker:
@@ -129,7 +130,7 @@ class CarTracker:
             cv2.imshow("roi", roi)
             key = cv2.waitKey(1) & 0xFF
             if key == 27: break
-            if key == ord('r'): trafficControl.onPress('r')
+            if key == ord('r'): trafficLight.onPress('r')
         video.release()
         cv2.destroyAllWindows()
 
@@ -212,26 +213,34 @@ class CarTracker:
     
     def onViolation(self, car, frame, vtype):
         print(f"Got violation of type \"{vtype}\". speed={car.getSpeed()}")
+        
         #Inc violation counter, only used for file names.
         self.violationCount += 1
+        
         #Crop car out of the image.
         x, y, w, h = car.getBbox()
         image = frame[y - 5:y + h + 5, x - 5:x + w + 5]
+        
+        #Fetch plate info.
+        plateText, img, isArabic = helpers.extractPlate(image, False)
         
         #Prepare and write image file.
         imagePath = config.VIOLATION_IMAGE_PATH + str(self.violationCount) + ".png"
         cv2.imwrite(imagePath, image)
         
+        #Prepare text.
+        text = "Violation: " + vtype + "\n"
+        if vtype != self.VTYPE_PARKING:
+            text += "Speed: " + str(car.getSpeed()) + "km/h\n"
+        text += "Plate Number: " + plateText + "\n"
+        
+        #Send SMS.
+        messager.sendViolation(text)
+        
         #Prepare text file; write violation type and plate name to it.
         textPath = config.VIOLATION_PLATE_PATH + str(self.violationCount) + ".txt"
         file = open(textPath, "w")
-        file.write("Violation: " + vtype + "\n")
-        
-        if vtype != self.VTYPE_PARKING:
-            file.write("Speed: " + str(car.getSpeed()) + "km/h\n")
-            
-        plateText, img, isArabic = helpers.extractPlate(image, False)
-        file.write("Plate Number: " + plateText + "\n")
+        file.write(text)
         file.close()
 
 ############################## Internals ##############################    
