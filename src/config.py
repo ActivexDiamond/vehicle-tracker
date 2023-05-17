@@ -32,12 +32,25 @@ import cv2
 import os
 from PIL import ImageFont
 
+############################## Custom Modules ##############################
+#Should contain Twilio credentials!
+import secret
+
 ############################## Debugging ##############################
+SEND_SMS = False
+
 DEBUG_PREPROCESSING = False
 DEBUG_VIDEO = True
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
+
+############################## SMS ##############################
+TWILIO_SID = secret.TWILIO_SID
+TWILIO_AUTH_TOKEN = secret.TWILIO_AUTH_TOKEN
+
+SENDER_PHONE_NUMBER = "++12545276516"
+TARGET_PHONE_NUMBER = "+9647709206760"
 
 ############################## Image Paths ##############################
 IMAGE_PATH = "./test/images2/"
@@ -78,10 +91,10 @@ MIN_CAR_SIZE = 1000
 MAX_DISPLACEMENT = 65
 
 #Displacement, between 2 frames, below which to consider an object is the still.
-MAX_PARKED_DISPLACEMENT = 20
+MAX_PARKED_DISPLACEMENT = 10
 
 #Time, in seconds, before a still-car is considered parked.
-MAX_PARK_TIME = 2
+MAX_PARK_TIME = 5
 
 if not os.path.exists(VIOLATION_IMAGE_PATH):
     os.makedirs(VIOLATION_IMAGE_PATH)

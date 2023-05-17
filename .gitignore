@@ -5,6 +5,12 @@ darknet/
 data/
 yolov4_obj_best.weights
 test/videos1/
+secret.py
+src/secret.py
+secret
+src/secret
+t_test.py
+src/t_test.py
 
 ## General that I use in most of my projects.
 # Temp Fixes
