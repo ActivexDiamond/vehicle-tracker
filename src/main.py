@@ -53,14 +53,21 @@ def testImagesDir():
     processedImages = []
                 
     # Plate recognition and OCR.
+    file = open(config.IMAGE_TEST_RESULT_PATH, "w")
+    extFile = open(config.IMAGE_TEST_RESULT_PATH_EXTENDED, "w")
     for i in range(0, len(images)):
-        text, img, isArabic = helpers.extractPlate(images[i])
+        text, img, isArabic, ext = helpers.extractPlate(images[i])
+        
+        string = f"img={imageNames[i]}, text={text}, isArabic={isArabic}\n"
+        #print(string)
+        extString = string + ext + "\n=========\n"
+        
+        file.write(string)
+        extFile.write(extString)
+        
         processedImages.append(img)
-        if isArabic:
-            print(f"Extracted Arabic text: {text}")
-            print(f"REVERSED: {helpers.cleanArabicText(text)}")
-        else:
-            print(f"Extracted English text: {text}")
+    file.close()    
+    extFile.close()
     
     #Prepare plot and process images.
     _, axes = pyplot.subplots(config.DATA_DISPLAY_W, config.DATA_DISPLAY_H, figsize=(9, 9))

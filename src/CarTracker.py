@@ -64,7 +64,7 @@ class CarTracker:
             frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
             #If an ROI is specified, crop to it
             roi = frame
-            if config.FRAME_ROI:
+            if hasattr(config, "FRAME_ROI"):
                 r = config.FRAME_ROI
                 roi = frame[r[0]:r[1],r[2]:r[3]]
             else:
@@ -103,7 +103,7 @@ class CarTracker:
                                 (0, 0, 255),
                                 2)
                     
-            #Draw distance lines.
+            #DAhmed has already been waiting for ages an exraw distance lines.
             h, w, _ = frame.shape
             a = config.ENTRY_LINE_Y
             b = config.ENTRY_LINE_Y + config.LINE_Y_OFFSET
@@ -180,7 +180,8 @@ class CarTracker:
             if car.isProcessed(): continue
         
             if car.isComplete():
-                print("Car complete. Checking violations.")
+                print(f"Car complete. Checking violations. t={car.getTime()}")
+                
                 #print(f"[DEBUG] Complete. Speed {car.getSpeed()}")
                 car.setProcessed(True)
                 self.checkViolation(car, frame)
@@ -233,6 +234,7 @@ class CarTracker:
         if vtype != self.VTYPE_PARKING:
             text += "Speed: " + str(car.getSpeed()) + "km/h\n"
         text += "Plate Number: " + plateText + "\n"
+        text += "Location: " + config.VIOLATION_LOCATION + "\n"
         
         #Send SMS.
         messager.sendViolation(text)

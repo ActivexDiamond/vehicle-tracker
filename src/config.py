@@ -40,7 +40,7 @@ import secret
 SEND_SMS = False
 
 DEBUG_PREPROCESSING = False
-DEBUG_VIDEO = True
+DEBUG_VIDEO = False
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
@@ -50,10 +50,15 @@ TWILIO_SID = secret.TWILIO_SID
 TWILIO_AUTH_TOKEN = secret.TWILIO_AUTH_TOKEN
 
 SENDER_PHONE_NUMBER = "++12545276516"
-TARGET_PHONE_NUMBER = "+9647709206760"
+
+TARGET_PHONE_NUMBERS = ["+9647709206760", "+964 773 805 7710"]
+
+VIOLATION_LOCATION = "Baghdad"
 
 ############################## Image Paths ##############################
 IMAGE_PATH = "./test/images2/"
+IMAGE_TEST_RESULT_PATH = "./output/image-test-result.txt"
+IMAGE_TEST_RESULT_PATH_EXTENDED = "./output/image-test-result-extended.txt"
 
 ############################## YOLO/Darknet ##############################
 CONFIG_FILE = "yolov4-obj.cfg"

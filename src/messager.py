@@ -21,6 +21,7 @@ def sendViolation(body):
     if not config.SEND_SMS: 
         print(f"Messaging disabled. Fake text={body}")    
         return False
-    msg = client.message.create(body=body, to=config.TARGET_PHONE_NUMBER)
-    print(f"Sent SMS! SID={msg.sid}\tText={body}")
+    for num in config.TARGET_PHONE_NUMBER:
+        msg = client.message.create(body=body, to=num)
+        print(f"Sent SMS! receiver={num}\tSID={msg.sid}\tText={body}")
     return msg

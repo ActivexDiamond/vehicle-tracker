@@ -47,7 +47,9 @@ def performBilingualOcr(image):
     # Fallback in case OCR failed.
     ocrText = "Unknown"
     isArabic = False
-
+    
+    #This is only needed so that debugInfo doesn't through an UnboundLocalError.
+    arNumbersModded = []
     # Check scores to deduce text language.
     if enConfidence >= arConfidence and enConfidence >= config.MIN_CONFIDENCE:
         ocrText = " ".join(enTexts) + " ".join(enNumbers)
@@ -56,7 +58,21 @@ def performBilingualOcr(image):
             translatedNumbers = helpers.translateNumbersToArabic(enNumbers)
             ocrText = " ".join(arTexts) + " ".join(translatedNumbers)
         else:
-            ocrText = " ".join(arTexts) + " ".join(arNumbers)
+            #Remember, the OCR returns a list that could contain multiple strings.
+            if len(arNumbers) > 0:
+                arNumbersModded = [None] * len(arNumbers)
+                for num in arNumbers:
+                    if num[0] == "١":
+                        arNumbersModded = "أ" + num[1:]
+                    else:
+                        arNumbersModded = num
+            ocrText = " ".join(arTexts) + " ".join(arNumbersModded)
         isArabic = True
     
-    return ocrText, isArabic
+    debugInfo = (f"enConfidence={enConfidence}\tenTexts={enTexts}\tenNumbers={enNumbers}\n" +
+    f"arConfidence={arConfidence}\tarTexts={arTexts}\tarNumbers={arNumbers}\n" +
+    f"arNumbersModded={arNumbersModded}\n" +
+    f"translatedNumbers={helpers.translateNumbersToArabic(enNumbers)}\n\n" +
+    f"enResult={enResult}\n\narResult={arResult}")
+    
+    return ocrText, isArabic, debugInfo

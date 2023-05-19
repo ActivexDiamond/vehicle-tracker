@@ -93,7 +93,7 @@ def drawArabicText(image, ocrText, bbox):
     arText = cleanArabicText(ocrText)
 
     # Convert into bidi text.
-    print(f"Will draw Arabic text {ocrText}")
+    #print(f"Will draw Arabic text {ocrText}")
     reshapedText = arabic_reshaper.reshape(arText)
     bidiText = get_display(reshapedText)
 
@@ -120,7 +120,7 @@ def drawEnglishText(image, ocr_text, bbox):
     cv2.rectangle(image, (x, y), (x + text_w, y - text_h), config.TEXT_BACKGROUND_COLOR, -1)
 
     # Draw text.
-    print(f"Will draw English text {ocr_text}")
+    #print(f"Will draw English text {ocr_text}")
     cv2.putText(image, ocr_text, (x, y), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
     # Label images.
 
@@ -170,7 +170,7 @@ def extractPlate(image, drawOnImage=True):
         if plateImage.shape[0] <= 0 or plateImage.shape[1] <= 0:
             print(f"Plate image too small. Plate shape: {plateImage.shape}")
             continue
-        ocrText, isArabic = ocr.performBilingualOcr(plateImage)
+        ocrText, isArabic, ext = ocr.performBilingualOcr(plateImage)
 
         #Draw the bounding-box of the license plate.
         if drawOnImage:
@@ -180,5 +180,5 @@ def extractPlate(image, drawOnImage=True):
             else:
                 drawEnglishText(image, ocrText, bbox)
     #Once all looping is done, the final state of the image is returned alongside the plate text.
-    return ocrText, image, isArabic
+    return ocrText, image, isArabic, ext
 
