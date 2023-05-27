@@ -35,7 +35,6 @@ def performBilingualOcr(image):
     # Format paddle string into friendlier format.
     enTexts, enNumbers, enScores = helpers.formatPaddleResult(enResult)
     arTexts, arNumbers, arScores = helpers.formatPaddleResult(arResult)
-    arStrictTexts = helpers.strictifyArabicTexts(arTexts)
     
     # Check if OCRs occured between computing their means.
     enConfidence = 0
@@ -54,15 +53,12 @@ def performBilingualOcr(image):
     
     # Check scores to deduce text language.
     if enConfidence >= arConfidence and enConfidence >= config.MIN_CONFIDENCE:
-        #Is English.
-        ocrText = " ".join(enTexts) + " " + " ".join(enNumbers)
+        ocrText = " ".join(enTexts) + " ".join(enNumbers)
     elif arConfidence >= config.MIN_CONFIDENCE:
         if len(enNumbers) > 1:
-            #Is english with translated numbers.
             translatedNumbers = helpers.translateNumbersToArabic(enNumbers)
-            ocrText = " ".join(arStrictTexts) + " " + " ".join(translatedNumbers)
+            ocrText = " ".join(arTexts) + " ".join(translatedNumbers)
         else:
-            #Is english with native numbers.
             #Remember, the OCR returns a list that could contain multiple strings.
             if len(arNumbers) > 0:
                 arNumbersModded = [None] * len(arNumbers)
@@ -71,13 +67,12 @@ def performBilingualOcr(image):
                         arNumbersModded = "أ" + num[1:]
                     else:
                         arNumbersModded = num
-            ocrText = " ".join(arStrictTexts) + " " + " ".join(arNumbersModded)
+            ocrText = " ".join(arTexts) + " ".join(arNumbersModded)
         isArabic = True
     
     debugInfo = (f"enConfidence={enConfidence}\tenTexts={enTexts}\tenNumbers={enNumbers}\n" +
     f"arConfidence={arConfidence}\tarTexts={arTexts}\tarNumbers={arNumbers}\n" +
     f"arNumbersModded={arNumbersModded}\n" +
-    f"arStrictTexts={arStrictTexts}\n" +
     f"translatedNumbers={helpers.translateNumbersToArabic(enNumbers)}\n\n" +
     f"enResult={enResult}\n\narResult={arResult}")
     

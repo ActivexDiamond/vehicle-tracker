@@ -10,7 +10,6 @@ Created on Sun Apr 23 22:03:49 2023
 ############################## Dependencies ##############################
 #Native
 import math
-from datetime import datetime
 
 #Image Manipulation
 import cv2
@@ -238,7 +237,7 @@ class CarTracker:
             text += "Speed: " + str(car.getSpeed()) + "km/h\n"
         text += "Plate Number: " + plateText + "\n"
         text += "Location: " + config.VIOLATION_LOCATION + "\n"
-        text += "Time: " + datetime.now().strftime(config.TIME_FORMAT) + "\n"
+        
         #Send SMS.
         messager.sendViolation(text)
         

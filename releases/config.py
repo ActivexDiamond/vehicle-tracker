@@ -39,6 +39,7 @@ import secret
 ############################## Debugging ##############################
 SEND_SMS = False
 
+DEBUG_PREPROCESSING = False
 DEBUG_VIDEO = True
 
 DATA_DISPLAY_W = 3
@@ -50,11 +51,9 @@ TWILIO_AUTH_TOKEN = secret.TWILIO_AUTH_TOKEN
 
 SENDER_PHONE_NUMBER = "++12545276516"
 
-#TARGET_PHONE_NUMBERS = ["+9647709206760", "+9647738057710"]
-TARGET_PHONE_NUMBERS = ["+9647726914819"]
+TARGET_PHONE_NUMBERS = ["+9647709206760", "+964 773 805 7710"]
 
 VIOLATION_LOCATION = "Baghdad"
-TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ############################## Image Paths ##############################
 IMAGE_PATH = "./test/images2/"
@@ -74,11 +73,6 @@ MIN_CONFIDENCE = 0.2
 
 SHOW_ENGLISH_LOG = False
 SHOW_ARABIC_LOG = False
-
-#Maximum degree of difference between an Arabic string from our list of valid
-# texts to consider it the same word. Inclusive.
-MAX_LEVENSHTEIN_DISTANCE = 3
-
 ############################## Visual ##############################
 FONT = cv2.FONT_HERSHEY_DUPLEX
 FONT_SCALE = 1
@@ -91,7 +85,7 @@ TEXT_COLOR = (255, 0, 0)
 TEXT_BACKGROUND_COLOR = (0, 0, 0, 128)
 
 ############################## Speed - General ##############################
-MAX_SPEED = 64                  #km/h
+MAX_SPEED = 70                  #km/h
 VIOLATION_IMAGE_PATH = "./output/"
 VIOLATION_PLATE_PATH = "./output/"
 
@@ -144,7 +138,7 @@ _METADATA = {
     "TITLE": "Traffic Watcher",
     "DESCRIPTION": "An M.L. model capable of detecting traffic violations and multi-lingually identifying and recognising license plates.",
     "TYPE": "CLI",
-    "VERSION": "0.10.0",
+    "VERSION": "UNSTABLE-DEV",
     "LICENSE": "MIT",
     "AUTHOR": "Dulfiqar 'activexdiamond' H. Al-Safi"
 }

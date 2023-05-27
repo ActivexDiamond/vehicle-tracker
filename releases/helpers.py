@@ -10,7 +10,6 @@ Created on Sun Apr 14 13:54:56 2023
 ############################## Dependencies ##############################
 ## Native
 import string, sys, os
-import difflib
 print("Imported built-in stuff.")
 
 import cv2
@@ -33,8 +32,6 @@ from darknet_images import load_images
 from darknet_images import image_detection
 print("Imported darknet==unkown")
 
-import Levenshtein
-
 ############################## Custom Modules ##############################
 import config
 
@@ -52,36 +49,6 @@ TRANSLATION_MAP = [
     ENGLISH_LETTERS + list("gad") + ENGLISH_DIGITS,
     ARABIC_LETTERS + ARABIC_DIGITS
 ]
-
-ARABIC_WORD_LIST = [
-"بغداد",
-"البصرة",
-"ذي قار",
-"المثنى",
-"نينوى ",
-"بابل",
-"ديالى",
-"الانبار",
-"القادسية",
-"ميسان",
-"صلاح الدين",
-"كربلاء",
-"النجف",
-"كركوك",
-"دهوك",
-"اربيل",
-"السليمانية",
-"واسط",
-"حلبجة",
-"اجرة",
-"خصوصي",
-"حمل",
-"حكومية",
-]
-
-print("==============================")
-print(f"Using the following as valid Arabic words: \n{ARABIC_WORD_LIST}\n")
-print("==============================")
 
 ############################## Geometrey ##############################
 # Converts bounding-boxes into image-coords.
@@ -156,20 +123,6 @@ def drawEnglishText(image, ocr_text, bbox):
     #print(f"Will draw English text {ocr_text}")
     cv2.putText(image, ocr_text, (x, y), config.FONT, config.FONT_SCALE, config.TEXT_COLOR, config.FONT_THICKNESS)
     # Label images.
-
-def strictifyArabicTexts(texts):
-    res = []
-    for text in texts:
-        closest = 1000
-        closestText = ""
-        for valid in ARABIC_WORD_LIST:
-            distance = Levenshtein.distance(text, valid)
-            if distance < closest:
-                closest = distance 
-                closestText = valid
-        s = "Unknown" if closest > config.MAX_LEVENSHTEIN_DISTANCE else closestText
-        res.append(s)
-    return res
 
 ############################## OCR-specific Helpers ##############################
 def formatPaddleResult(result):

@@ -1,107 +1,118 @@
-img=ar0.jpeg, text=اربل العراىأ ٣ ٩ ٨, isArabic=True
+img=ar0.jpeg, text=اربيل المثنى أ ٣ ٩ ٨, isArabic=True
 enConfidence=0.5138359069824219	enTexts=[]	enNumbers=['0.9']
 arConfidence=0.868144690990448	arTexts=['اربل', 'العراى']	arNumbers=['١٣٩٨']
 arNumbersModded=أ٣٩٨
+arStrictTexts=['اربيل', 'المثنى']
 translatedNumbers=['0.9']
 
 enResult=[[[[[46.0, 12.0], [279.0, 12.0], [279.0, 67.0], [46.0, 67.0]], ('0.9', 0.5138359069824219)]]]
 
 arResult=[[[[[52.0, 12.0], [278.0, 12.0], [278.0, 67.0], [52.0, 67.0]], ('١٣٩٨', 0.702907383441925)], [[[11.0, 93.0], [140.0, 87.0], [142.0, 130.0], [13.0, 136.0]], ('اربل', 0.9900712966918945)], [[[172.0, 96.0], [283.0, 84.0], [287.0, 126.0], [176.0, 136.0]], ('العراى', 0.9114553928375244)]]]
 =========
-img=ar12.jpeg, text=اربيل العراقأ ٤ ٦, isArabic=True
+img=ar12.jpeg, text=اربيل Unknown أ ٤ ٦, isArabic=True
 enConfidence=0.5816044807434082	enTexts=[]	enNumbers=['12700']
 arConfidence=0.83021213610967	arTexts=['اربيل', 'العراق']	arNumbers=['١٤٦']
 arNumbersModded=أ٤٦
+arStrictTexts=['اربيل', 'Unknown']
 translatedNumbers=['12700']
 
 enResult=[[[[[39.0, 18.0], [145.0, 14.0], [146.0, 46.0], [40.0, 50.0]], ('12700', 0.5816044807434082)]]]
 
 arResult=[[[[[44.0, 20.0], [124.0, 20.0], [124.0, 47.0], [44.0, 47.0]], ('١٤٦', 0.661679744720459)], [[[20.0, 63.0], [83.0, 60.0], [84.0, 89.0], [21.0, 92.0]], ('اربيل', 0.9001737833023071)], [[[98.0, 63.0], [153.0, 59.0], [156.0, 89.0], [100.0, 93.0]], ('العراق', 0.9287828803062439)]]]
 =========
-img=ar14.jpeg, text=سليمانيةA123456 SUL, isArabic=True
+img=ar14.jpeg, text=السليمانية A123456 SUL, isArabic=True
 enConfidence=0.8628605405489603	enTexts=['allw']	enNumbers=['A123456', 'SUL']
 arConfidence=0.923064132531484	arTexts=['سليمانية']	arNumbers=['123556', 'SUL']
 arNumbersModded=[]
+arStrictTexts=['السليمانية']
 translatedNumbers=['A123456', 'SUL']
 
 enResult=[[[[[54.0, 21.0], [240.0, 21.0], [240.0, 60.0], [54.0, 60.0]], ('A123456', 0.9972622990608215)], [[[68.0, 75.0], [128.0, 75.0], [128.0, 103.0], [68.0, 103.0]], ('SUL', 0.9945483207702637)], [[[134.0, 76.0], [238.0, 76.0], [238.0, 98.0], [134.0, 98.0]], ('allw', 0.5967710018157959)]]]
 
 arResult=[[[[[55.0, 22.0], [240.0, 22.0], [240.0, 61.0], [55.0, 61.0]], ('123556', 0.8047673106193542)], [[[68.0, 71.0], [125.0, 71.0], [125.0, 105.0], [68.0, 105.0]], ('SUL', 0.9994029998779297)], [[[135.0, 72.0], [239.0, 76.0], [238.0, 104.0], [134.0, 100.0]], ('سليمانية', 0.965022087097168)]]]
 =========
-img=ar3.jpeg, text=خصوصى البصرةR 98, isArabic=True
+img=ar3.jpeg, text=خصوصي البصرة R 98, isArabic=True
 enConfidence=0.8760356605052948	enTexts=[]	enNumbers=['R', '98']
 arConfidence=0.926400363445282	arTexts=['خصوصى', 'البصرة']	arNumbers=['و']
 arNumbersModded=[]
+arStrictTexts=['خصوصي', 'البصرة']
 translatedNumbers=['R', '98']
 
 enResult=[[[[[4.0, 34.0], [17.0, 34.0], [17.0, 60.0], [4.0, 60.0]], ('R', 0.7547181248664856)], [[[129.0, 64.0], [181.0, 68.0], [179.0, 89.0], [127.0, 85.0]], ('98', 0.997353196144104)]]]
 
 arResult=[[[[[133.0, 69.0], [147.0, 69.0], [147.0, 84.0], [133.0, 84.0]], ('و', 0.9856739640235901)], [[[44.0, 104.0], [131.0, 99.0], [132.0, 120.0], [46.0, 124.0]], ('خصوصى', 0.8482573628425598)], [[[156.0, 98.0], [225.0, 101.0], [223.0, 124.0], [155.0, 123.0]], ('البصرة', 0.945269763469696)]]]
 =========
-img=ar4.jpeg, text=سلمانية العراقأ ٥ ٥ ٦ ٦ ٧, isArabic=True
+img=ar4.jpeg, text=السليمانية Unknown أ ٥ ٥ ٦ ٦ ٧, isArabic=True
 enConfidence=0	enTexts=[]	enNumbers=[]
 arConfidence=0.8276563684145609	arTexts=['سلمانية', 'العراق']	arNumbers=['١٥٥٦٦٧']
 arNumbersModded=أ٥٥٦٦٧
+arStrictTexts=['السليمانية', 'Unknown']
 translatedNumbers=[]
 
 enResult=[[]]
 
 arResult=[[[[[41.0, 22.0], [204.0, 22.0], [204.0, 61.0], [41.0, 61.0]], ('١٥٥٦٦٧', 0.8003396987915039)], [[[33.0, 84.0], [110.0, 84.0], [110.0, 116.0], [33.0, 116.0]], ('سلمانية', 0.7080827355384827)], [[[132.0, 86.0], [211.0, 81.0], [213.0, 115.0], [134.0, 120.0]], ('العراق', 0.9745466709136963)]]]
 =========
-img=en11.jpeg, text=21`BH 2345 AA IND, isArabic=False
+img=en11.jpeg, text= 21`BH 2345 AA IND, isArabic=False
 enConfidence=0.9881932139396667	enTexts=[]	enNumbers=['21`BH 2345 AA', 'IND']
 arConfidence=0.9056361794471741	arTexts=[]	arNumbers=['21', 'BH', '2345', 'AA', 'IND']
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['21`BH 2345 AA', 'IND']
 
 enResult=[[[[[74.0, 35.0], [638.0, 35.0], [638.0, 127.0], [74.0, 127.0]], ('21`BH 2345 AA', 0.9806257486343384)], [[[20.0, 64.0], [72.0, 64.0], [72.0, 93.0], [20.0, 93.0]], ('IND', 0.9957606792449951)]]]
 
 arResult=[[[[[69.0, 31.0], [159.0, 31.0], [159.0, 129.0], [69.0, 129.0]], ('21', 0.9988521337509155)], [[[190.0, 32.0], [305.0, 32.0], [305.0, 128.0], [190.0, 128.0]], ('BH', 0.9493198394775391)], [[[323.0, 32.0], [504.0, 32.0], [504.0, 131.0], [323.0, 131.0]], ('2345', 0.9179106950759888)], [[[523.0, 29.0], [642.0, 29.0], [642.0, 132.0], [523.0, 132.0]], ('AA', 0.79941725730896)], [[[18.0, 63.0], [70.0, 63.0], [70.0, 92.0], [18.0, 92.0]], ('IND', 0.862680971622467)]]]
 =========
-img=en12.jpeg, text=S32H, isArabic=False
+img=en12.jpeg, text= S32H, isArabic=False
 enConfidence=0.9666100740432739	enTexts=[]	enNumbers=['S32H']
 arConfidence=0.8272525072097778	arTexts=[]	arNumbers=['2H']
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['S32H']
 
 enResult=[[[[[18.0, 1.0], [58.0, 1.0], [58.0, 13.0], [18.0, 13.0]], ('S32H', 0.9666100740432739)]]]
 
 arResult=[[[[[18.0, 0.0], [59.0, 0.0], [59.0, 13.0], [18.0, 13.0]], ('2H', 0.8272525072097778)]]]
 =========
-img=en15.jpeg, text=HR26BM8271, isArabic=False
+img=en15.jpeg, text= HR26BM8271, isArabic=False
 enConfidence=0.9441176652908325	enTexts=[]	enNumbers=['HR26BM8271']
 arConfidence=0.8482443690299988	arTexts=[]	arNumbers=['HR26BM8271']
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['HR26BM8271']
 
 enResult=[[[[[5.0, 5.0], [126.0, 25.0], [120.0, 43.0], [0.0, 23.0]], ('HR26BM8271', 0.9441176652908325)]]]
 
 arResult=[[[[[4.0, 6.0], [127.0, 26.0], [121.0, 44.0], [0.0, 23.0]], ('HR26BM8271', 0.8482443690299988)]]]
 =========
-img=en2.jpeg, text=KY70 CWT, isArabic=False
+img=en2.jpeg, text= KY70 CWT, isArabic=False
 enConfidence=0.9205490350723267	enTexts=[]	enNumbers=['KY70 CWT']
 arConfidence=0.8526882529258728	arTexts=[]	arNumbers=['KY7OCWT']
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['KY70 CWT']
 
 enResult=[[[[[11.0, 4.0], [102.0, 4.0], [102.0, 22.0], [11.0, 22.0]], ('KY70 CWT', 0.9205490350723267)]]]
 
 arResult=[[[[[14.0, 3.0], [102.0, 3.0], [102.0, 22.0], [14.0, 22.0]], ('KY7OCWT', 0.8526882529258728)]]]
 =========
-img=en5.jpeg, text=N-Q4163, isArabic=False
+img=en5.jpeg, text= N-Q4163, isArabic=False
 enConfidence=0.8601003289222717	enTexts=[]	enNumbers=['N-Q4163']
 arConfidence=0	arTexts=[]	arNumbers=[]
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['N-Q4163']
 
 enResult=[[[[[4.0, 4.0], [52.0, 4.0], [52.0, 18.0], [4.0, 18.0]], ('N-Q4163', 0.8601003289222717)]]]
 
 arResult=[[]]
 =========
-img=mul_en13.jpeg, text=NOT2B, isArabic=False
+img=mul_en13.jpeg, text= NOT2B, isArabic=False
 enConfidence=0.9880560636520386	enTexts=[]	enNumbers=['NOT2B']
 arConfidence=0.808699905872345	arTexts=[]	arNumbers=['NOT']
 arNumbersModded=[]
+arStrictTexts=[]
 translatedNumbers=['NOT2B']
 
 enResult=[[[[[18.0, 7.0], [85.0, 7.0], [85.0, 29.0], [18.0, 29.0]], ('NOT2B', 0.9880560636520386)]]]
