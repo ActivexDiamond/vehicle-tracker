@@ -144,7 +144,7 @@ _METADATA = {
     "TITLE": "Traffic Watcher",
     "DESCRIPTION": "An M.L. model capable of detecting traffic violations and multi-lingually identifying and recognising license plates.",
     "TYPE": "CLI",
-    "VERSION": "0.10.0",
+    "VERSION": "UNSTABLE-DEV",
     "LICENSE": "MIT",
     "AUTHOR": "Dulfiqar 'activexdiamond' H. Al-Safi"
 }
