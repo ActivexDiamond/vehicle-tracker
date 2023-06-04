@@ -19,7 +19,9 @@ client = Client(config.TWILIO_SID, config.TWILIO_AUTH_TOKEN)
 ############################## API ##############################
 def sendViolation(body):
     if not config.SEND_SMS: 
-        print(f"Messaging disabled. Fake text={body}")    
+        print("===== Messaging disabled. Fake text=====")    
+        print(body)
+        print("========================================")
         return False
     for num in config.TARGET_PHONE_NUMBERS:
         msg = client.messages.create(body=body, to=num,

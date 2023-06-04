@@ -1,5 +1,0 @@
-Violation: Driving over the speed limit!
-Speed: 70km/h
-Plate Number: Unknown
-Location: Baghdad
-Time: 2023-05-27 16:34:48

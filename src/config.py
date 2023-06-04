@@ -27,6 +27,9 @@ sys.path.insert(1, DARKNET_PATH)
 #Disable paddle's excessive logging.
 logging.getLogger("paddle").setLevel(logging.WARN)
 
+from datetime import datetime
+RUN_START_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
 ############################## Dependencies ##############################
 import cv2
 import os
@@ -43,6 +46,9 @@ DEBUG_VIDEO = True
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
+
+SHOW_BBOX = False
+SHOW_BBOX_SIZE = True
 
 ############################## SMS ##############################
 TWILIO_SID = secret.TWILIO_SID
@@ -99,7 +105,7 @@ MIN_CAR_SIZE = 1000
 
 #Displacement, between 2 frames, below which to consider an object is the same 
 #   as the one detected last frame.
-MAX_DISPLACEMENT = 65
+MAX_DISPLACEMENT = 100
 
 #Displacement, between 2 frames, below which to consider an object is the still.
 MAX_PARKED_DISPLACEMENT = 10
@@ -111,33 +117,77 @@ if not os.path.exists(VIOLATION_IMAGE_PATH):
     os.makedirs(VIOLATION_IMAGE_PATH)
 if not os.path.exists(VIOLATION_PLATE_PATH):
     os.makedirs(VIOLATION_PLATE_PATH)
+
+if not os.path.exists(VIOLATION_IMAGE_PATH + RUN_START_TIME + "/"):
+    os.makedirs(VIOLATION_IMAGE_PATH + RUN_START_TIME + "/")
+if not os.path.exists(VIOLATION_PLATE_PATH + RUN_START_TIME + "/"):
+    os.makedirs(VIOLATION_PLATE_PATH + RUN_START_TIME + "/")    
     
 ############################## Speed - Video Specific ##############################
-VIDEO_PATH = "./test/videos1/traffic4.mp4"
-#Values for traffic4.mp4:
-ENTRY_LINE_Y = 410          
-EXIT_LINE_Y = 235
-LINE_Y_OFFSET = 20
+VIDEOS = [
+    {   # 0
+        "VIDEO_PATH": "./test/videos1/traffic4.mp4",
+        "ENTRY_LINE_Y": 820,
+        "EXIT_LINE_Y": 470,
+        "LINE_Y_OFFSET": 20,
+        #To calculate this, you need a vehicle with a known speed (km/h).
+        #Compute its time passing (seconds) between lines ENTRY and EXIT,
+        #   this value is then equal to speed * time.
+        "LINES_DISTANCE": 59.1,
+        #If the video has extra noise/objects beyond the car path,
+        #   this can be used to crop the region of interest.
+        #Comment it out to use the full frame.
+        "FRAME_ROI": [100, 1080, 400, 960*2],
+    },{ # 1
+        "VIDEO_PATH": "./test/videos1/IMG_0102.mp4",
+        "ENTRY_LINE_Y": 620,
+        "EXIT_LINE_Y": 270,
+        "LINE_Y_OFFSET": 15,
+        "LINES_DISTANCE": 45,
+    },{ # 2
+        "VIDEO_PATH": "./test/videos1/top-day.MP4",
+        "ENTRY_LINE_Y": 1700,
+        "EXIT_LINE_Y": 1400 - 150,
+        "LINE_Y_OFFSET": 60,
+        "LINES_DISTANCE": 80 * 0.32,
+        "MIN_CAR_SIZE": 30e3,
+        "MAX_DISPLACEMENT": 250,
+        "MAX_PARKED_DISPLACEMENT": 30,
+    }
+]
 
-#To calculate this, you need a vehicle with a known speed (km/h).
-#Compute its time passing (seconds) between lines ENTRY and EXIT,
-#   this value is then equal to speed * time.
-LINES_DISTANCE = 59.1
+#Note: 4k is 3840 x 2160
 
+SELECTED_VIDEO = 2
+_v = VIDEOS[SELECTED_VIDEO]
+VIDEO_PATH = _v["VIDEO_PATH"]
+ENTRY_LINE_Y = _v["ENTRY_LINE_Y"]
+EXIT_LINE_Y = _v["EXIT_LINE_Y"]
+LINE_Y_OFFSET = _v["LINE_Y_OFFSET"]
+LINES_DISTANCE = _v["LINES_DISTANCE"]
 
+print(f"Selected video  = [{SELECTED_VIDEO}]")
+print(f"VIDEO_PATH      = {VIDEO_PATH}")
+print(f"ENTRY_LINE_Y    = {ENTRY_LINE_Y}")
+print(f"EXIT_LINE_Y     = {EXIT_LINE_Y}")
+print(f"LINE_Y_OFFSET   = {LINE_Y_OFFSET}")
+print(f"LINES_DISTANCE  = {LINES_DISTANCE}")
+if "FRAME_ROI" in _v:
+    FRAME_ROI = _v["FRAME_ROI"]
+    print(f"FRAME_ROI = {FRAME_ROI}")
 
-#If the video has extra noise/objects beyond the car path,
-#   this can be used to crop the region of interest.
-#Comment it out to use the full frame.
-FRAME_ROI = [50, 540, 200, 960]
-    
-############################## Speed - Video Specific ##############################
-#VIDEO_PATH = "./test/videos1/IMG_0102.mp4"
-#ENTRY_LINE_Y = 410 - 100
-#EXIT_LINE_Y = 235 - 100
-#LINE_Y_OFFSET = 15
+#A particular video can also override the defaults of any general video configs.
+#This is useful for videos with higher/lower resolutions.
+if "MIN_CAR_SIZE" in _v:
+    MIN_CAR_SIZE = _v["MIN_CAR_SIZE"]
+    print(f"MIN_CAR_SIZE    = {MIN_CAR_SIZE}")
+if "MAX_DISPLACEMENT" in _v:
+    MAX_DISPLACEMENT = _v["MAX_DISPLACEMENT"]
+    print(f"MAX_DISPLACEMENT= {MAX_DISPLACEMENT}")
+if "MAX_PARKED_DISPLACEMENT" in _v:
+    MAX_PARKED_DISPLACEMENT = _v["MAX_PARKED_DISPLACEMENT"]
+    print(f"MAX_PARKED_DISPLACEMENT = {MAX_PARKED_DISPLACEMENT}")
 
-#LINES_DISTANCE = 45
 
 ############################## Metadata ##############################
 _METADATA = {

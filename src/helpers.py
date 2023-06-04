@@ -76,7 +76,7 @@ ARABIC_WORD_LIST = [
 "اجرة",
 "خصوصي",
 "حمل",
-"حكومية",
+"حكومي",
 ]
 
 print("==============================")
@@ -109,6 +109,26 @@ def resizeBbox(detections, outSize, inSize):
 # Simple cropping wrapper.
 def crop(image, coord):
     return image[int(coord[1]):int(coord[3]), int(coord[0]):int(coord[2])]
+
+############################## Human Readable Numbers ##############################
+def isNumberSafe(num):
+    if isinstance(num, str):
+        num = float(num)
+    return float('{:.3g}'.format(abs(num)))
+
+def formatNumber(num):
+    num = isNumberSafe(num)
+    sign = ''
+
+    metric = {'T': 1e12, 'B': 1e9, 'M': 1e6, 'K': 1e3, '': 1}
+    for index in metric:
+        check = num / metric[index]
+        if(check>= 1):
+            num = check
+            sign = index
+            break
+
+    return f"{str(num).rstrip('0').rstrip('.')}{sign}"
 
 ############################## Text Helpers ##############################
 def cleanArabicText(text):

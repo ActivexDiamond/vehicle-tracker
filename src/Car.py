@@ -8,6 +8,7 @@ Created on Sun Apr 23 22:03:49 2023
 """
 
 ############################## Dependencies ##############################
+import numpy
 
 ############################## Custom Modules ##############################
 import config
@@ -24,6 +25,8 @@ class Car:
         
         self.processed = False
         self.stillFrames = 0
+        
+        self.color = tuple(numpy.random.random(size=3) * 256)
         
 ############################## Still Frames ##############################        
     def incrementStillFrames(self):

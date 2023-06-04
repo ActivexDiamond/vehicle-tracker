@@ -62,7 +62,8 @@ class CarTracker:
             #print("Processing next frame.")
             
             #Scale down a bit, and get dims.
-            frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
+            #frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
+            
             #If an ROI is specified, crop to it
             roi = frame
             if hasattr(config, "FRAME_ROI"):
@@ -87,22 +88,29 @@ class CarTracker:
                     x, y, w, h = cv2.boundingRect(c)
                     objects.append([x, y, w, h])
                     #Used for drawing.                    
-                    cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
-                    
+                    if config.SHOW_BBOX:
+                        cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                    if config.SHOW_BBOX_SIZE:
+                        bs = helpers.formatNumber(cv2.contourArea(c))
+                        cv2.putText(roi, f"bs={bs}",(x, y + 30), 
+                                    cv2.FONT_HERSHEY_PLAIN,
+                                    7,
+                                    (255, 128, 0),
+                                    10)                    
             #Compute speeds and check for violations.
             self.processFrame(roi, objects, fps, frameCount)
             
             for car in self.cars:
                 x, y, w, h = car.getBbox()
-                cv2.rectangle(roi, (x, y), (x + w, y + h), (255, 255, 0), 2)
+                cv2.rectangle(roi, (x, y), (x + w, y + h), car.color, 4)
                 
                 speed = car.getSpeed()
                 if speed != car.INVALID_STATE:
                     cv2.putText(roi, f"{speed}km/h",(x, y - 15), 
                                 cv2.FONT_HERSHEY_PLAIN,
-                                1,
+                                7,
                                 (0, 0, 255),
-                                2)
+                                10)
                     
             #DAhmed has already been waiting for ages an exraw distance lines.
             h, w, _ = frame.shape
@@ -112,25 +120,26 @@ class CarTracker:
             d = config.EXIT_LINE_Y + + config.LINE_Y_OFFSET
             
             color = (255, 0, 0)
-            stroke = 1
+            stroke = 4
             
             cv2.line(roi, (0, a), (w, a), color, stroke)
             cv2.line(roi, (0, b), (w, b), color, stroke)
     
+            color = (0, 255, 0)
             cv2.line(roi, (0, c), (w, c), color, stroke)
             cv2.line(roi, (0, d), (w, d), color, stroke)
             
             #Draw fps
-            cv2.putText(roi, f"FPS: {fps}",(20, 20), 
+            cv2.putText(roi, f"FPS: {fps}",(0, 100), 
                         cv2.FONT_HERSHEY_PLAIN,
-                        1,
+                        7,
                         (0, 0, 255),
-                        2)
+                        10)
             
             #Display to user.
-            cv2.namedWindow("roi", cv2.WINDOW_KEEPRATIO)
+            #cv2.namedWindow("roi", cv2.WINDOW_KEEPRATIO)
             cv2.imshow("roi", roi)
-            cv2.resizeWindow("roi", 800, 800)
+            #cv2.resizeWindow("roi", 800, 800)
             key = cv2.waitKey(1) & 0xFF
             if key == 27: break
             if key == ord('r'): trafficLight.onPress('r')
@@ -176,6 +185,23 @@ class CarTracker:
                 print("New object entered frame.")
                 self.cars.append(Car(obj, fps))
         
+        #Remove any duplicate objects.
+        removals = []
+        for i, c in enumerate(self.cars):
+            for j in range(i + 1, len(self.cars)):
+                c2 = self.cars[j]
+                if c == c2: continue
+                if any(j == item for item in removals): continue
+                cx, cy = c.getCenter()
+                cx2, cy2 = c2.getCenter()
+                dist = math.hypot(cx - cx2, cy - cy2)
+                if dist < config.MAX_DISPLACEMENT:
+                    removals.append(j)
+        removals.sort()
+        for i in range(len(removals) - 1, -1, -1):
+            #print("Removed duplicate!")
+            del self.cars[removals[i]]
+        
         #Once all processing is done, loop over all cars, check for any violations,
         #    if yes; issue onViolation callback.
         for i in range(len(self.cars) - 1, -1, -1):
@@ -183,7 +209,7 @@ class CarTracker:
             if car.isProcessed(): continue
         
             if car.isComplete():
-                print(f"Car complete. Checking violations. t={car.getTime()}")
+                print(f"Car complete. Checking violations. t={car.getTime():.3}")
                 
                 #print(f"[DEBUG] Complete. Speed {car.getSpeed()}")
                 car.setProcessed(True)
@@ -229,7 +255,10 @@ class CarTracker:
         plateText, img, isArabic, _ = helpers.extractPlate(image, False)
         
         #Prepare and write image file.
-        imagePath = config.VIOLATION_IMAGE_PATH + str(self.violationCount) + ".png"
+        imagePath = config.VIOLATION_IMAGE_PATH +\
+                config.RUN_START_TIME + "/" +\
+                str(self.violationCount) + ".png"
+                
         cv2.imwrite(imagePath, image)
         
         #Prepare text.
@@ -243,7 +272,9 @@ class CarTracker:
         messager.sendViolation(text)
         
         #Prepare text file; write violation type and plate name to it.
-        textPath = config.VIOLATION_PLATE_PATH + str(self.violationCount) + ".txt"
+        textPath = config.VIOLATION_PLATE_PATH +\
+            config.RUN_START_TIME + "/" +\
+            str(self.violationCount) + ".txt"
         file = open(textPath, "w", encoding="utf-8")
         file.write(text)
         file.close()

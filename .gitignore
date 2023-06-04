@@ -11,7 +11,7 @@ secret
 src/secret
 t_test.py
 src/t_test.py
-
+output/
 ## General that I use in most of my projects.
 # Temp Fixes
 #love-packager seems to get confused and create this at `root/` when the target code is inside `src/` even though it doesn't make it into the final build.
