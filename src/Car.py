@@ -25,7 +25,6 @@ class Car:
         
         self.processed = False
         self.stillFrames = 0
-        
         self.color = tuple(numpy.random.random(size=3) * 256)
         
 ############################## Still Frames ##############################        
@@ -34,6 +33,14 @@ class Car:
     def resetStillFrames(self):
         self.stillFrames = 0
 
+############################## Stale Frames ##############################        
+    def incrementStaleFrames(self):
+        self.staleFrames += 1
+    def resetStaleFrames(self):
+        self.staleFrames = 0
+    def isStale(self):
+        return self.staleFrames > config.MAX_STALE_FRAMES
+    
 ############################## Setters ##############################                
     def setProcessed(self, b):
         self.processed = b

@@ -43,13 +43,40 @@ import secret
 SEND_SMS = False
 
 DEBUG_VIDEO = True
+DEBUG_USE_ALT_OCR = False
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
 
 SHOW_BBOX = False
-SHOW_BBOX_SIZE = True
+SHOW_BBOX_SIZE = False
 
+SHOW_CAR_BBOX = True
+SHOW_CAR_SPEED = True
+
+PERFORM_OCR = False
+
+#Skip forward X frames of the video. Useful for debugging particular scenes.
+#Set to 0 to disable.
+SKIP_FRAMES = 0     #round(25 * 13.2)
+
+SCREENSHOT_TIMES = [2, 3.8, 6]              #In seconds.
+SCREENSHOT_NAME_PREFIX = ""
+#car_debug
+#blank_frame
+
+TAKE_SCREENSHOTS = False
+
+EXIT_AFTER_SCREENSHOTS_COMPLETION = True
+
+SCREENSHOT_PATH = "screenshots/"
+
+if not os.path.exists(SCREENSHOT_PATH):
+    os.makedirs(SCREENSHOT_PATH)
+if not os.path.exists(SCREENSHOT_PATH + SCREENSHOT_NAME_PREFIX + RUN_START_TIME + "/"):
+    os.makedirs(SCREENSHOT_PATH + SCREENSHOT_NAME_PREFIX + RUN_START_TIME + "/")
+
+    
 ############################## SMS ##############################
 TWILIO_SID = secret.TWILIO_SID
 TWILIO_AUTH_TOKEN = secret.TWILIO_AUTH_TOKEN
@@ -63,7 +90,9 @@ VIOLATION_LOCATION = "Baghdad"
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ############################## Image Paths ##############################
-IMAGE_PATH = "./test/images2/"
+#IMAGE_PATH = "./test/images2/"
+IMAGE_PATH = "./test/images3/"
+
 IMAGE_TEST_RESULT_PATH = "./output/image-test-result.txt"
 IMAGE_TEST_RESULT_PATH_EXTENDED = "./output/image-test-result-extended.txt"
 
@@ -81,10 +110,20 @@ MIN_CONFIDENCE = 0.2
 SHOW_ENGLISH_LOG = False
 SHOW_ARABIC_LOG = False
 
+SAVE_OCR_INPUT_PLATE = True
+OCR_PLATE_IMAGE_PATH = "./debug-output/"
+
+
 #Maximum degree of difference between an Arabic string from our list of valid
 # texts to consider it the same word. Inclusive.
 MAX_LEVENSHTEIN_DISTANCE = 3
 
+#Make sure relevant paths exist.
+if not os.path.exists(OCR_PLATE_IMAGE_PATH):
+    os.makedirs(OCR_PLATE_IMAGE_PATH)
+if not os.path.exists(OCR_PLATE_IMAGE_PATH + RUN_START_TIME + "/"):
+    os.makedirs(OCR_PLATE_IMAGE_PATH + RUN_START_TIME + "/")
+    
 ############################## Visual ##############################
 FONT = cv2.FONT_HERSHEY_DUPLEX
 FONT_SCALE = 1
@@ -102,6 +141,9 @@ VIOLATION_IMAGE_PATH = "./output/"
 VIOLATION_PLATE_PATH = "./output/"
 
 MIN_CAR_SIZE = 1000
+
+#Number of frames for car to have no matching objects before it is deleted.
+MAX_STALE_FRAMES = 1
 
 #Displacement, between 2 frames, below which to consider an object is the same 
 #   as the one detected last frame.
@@ -129,12 +171,11 @@ VIDEOS = [
         "VIDEO_PATH": "./test/videos1/traffic4.mp4",
         "ENTRY_LINE_Y": 820,
         "EXIT_LINE_Y": 470,
-        "LINE_Y_OFFSET": 20,
         #To calculate this, you need a vehicle with a known speed (km/h).
         #Compute its time passing (seconds) between lines ENTRY and EXIT,
         #   this value is then equal to speed * time.
         "LINES_DISTANCE": 59.1,
-        #If the video has extra noise/objects beyond the car path,
+        #If the video has extra noise/objects beyond the car pacth,
         #   this can be used to crop the region of interest.
         #Comment it out to use the full frame.
         "FRAME_ROI": [100, 1080, 400, 960*2],
@@ -142,35 +183,58 @@ VIDEOS = [
         "VIDEO_PATH": "./test/videos1/IMG_0102.mp4",
         "ENTRY_LINE_Y": 620,
         "EXIT_LINE_Y": 270,
-        "LINE_Y_OFFSET": 15,
         "LINES_DISTANCE": 45,
     },{ # 2
         "VIDEO_PATH": "./test/videos1/top-day.MP4",
-        "ENTRY_LINE_Y": 1700,
-        "EXIT_LINE_Y": 1400 - 150,
-        "LINE_Y_OFFSET": 60,
-        "LINES_DISTANCE": 80 * 0.32,
-        "MIN_CAR_SIZE": 30e3,
-        "MAX_DISPLACEMENT": 250,
-        "MAX_PARKED_DISPLACEMENT": 30,
+        "ENTRY_LINE_Y": 1600,
+        "EXIT_LINE_Y": 1100,
+        "LINES_DISTANCE": 80 * 0.44,
+        "MIN_CAR_SIZE": 25e3,
+        "MAX_DISPLACEMENT": 200,
+        "MAX_PARKED_DISPLACEMENT": 10,
+    },{ # 3
+        "VIDEO_PATH": "./test/phone-videos/forward1.mp4",
+        "MAX_SPEED": 75,
+        "ENTRY_LINE_Y": 1600,
+        "EXIT_LINE_Y": 1100,
+        "LINES_DISTANCE": 80 * 0.44,
+        "MIN_CAR_SIZE": 25e3,
+        "MAX_DISPLACEMENT": 200,
+        "MAX_PARKED_DISPLACEMENT": 10,
+    },{ # 4
+        "VIDEO_PATH": "./test/phone-videos/forward2.mp4",
+        "MAX_SPEED": 75,
+        "ENTRY_LINE_Y": 1600,
+        "EXIT_LINE_Y": 1100,
+        "LINES_DISTANCE": 80 * 0.44,
+        "MIN_CAR_SIZE": 25e3,
+        "MAX_DISPLACEMENT": 200,
+        "MAX_PARKED_DISPLACEMENT": 10,
+    },{ # 5
+        "VIDEO_PATH": "./test/phone-videos/reverse.mp4",
+        "MAX_SPEED": 75,
+        "ENTRY_LINE_Y": 1600,
+        "EXIT_LINE_Y": 1100,
+        "LINES_DISTANCE": 80 * 0.44,
+        "MIN_CAR_SIZE": 25e3,
+        "MAX_DISPLACEMENT": 200,
+        "MAX_PARKED_DISPLACEMENT": 10,
     }
 ]
 
 #Note: 4k is 3840 x 2160
 
-SELECTED_VIDEO = 2
+SELECTED_VIDEO = 3
 _v = VIDEOS[SELECTED_VIDEO]
 VIDEO_PATH = _v["VIDEO_PATH"]
 ENTRY_LINE_Y = _v["ENTRY_LINE_Y"]
 EXIT_LINE_Y = _v["EXIT_LINE_Y"]
-LINE_Y_OFFSET = _v["LINE_Y_OFFSET"]
 LINES_DISTANCE = _v["LINES_DISTANCE"]
 
 print(f"Selected video  = [{SELECTED_VIDEO}]")
 print(f"VIDEO_PATH      = {VIDEO_PATH}")
 print(f"ENTRY_LINE_Y    = {ENTRY_LINE_Y}")
 print(f"EXIT_LINE_Y     = {EXIT_LINE_Y}")
-print(f"LINE_Y_OFFSET   = {LINE_Y_OFFSET}")
 print(f"LINES_DISTANCE  = {LINES_DISTANCE}")
 if "FRAME_ROI" in _v:
     FRAME_ROI = _v["FRAME_ROI"]
@@ -178,6 +242,9 @@ if "FRAME_ROI" in _v:
 
 #A particular video can also override the defaults of any general video configs.
 #This is useful for videos with higher/lower resolutions.
+if "MAX_SPEED" in _v:
+    MAX_SPEED = _v["MAX_SPEED"]
+    print(f"MAX_SPEED= {MAX_SPEED}")
 if "MIN_CAR_SIZE" in _v:
     MIN_CAR_SIZE = _v["MIN_CAR_SIZE"]
     print(f"MIN_CAR_SIZE    = {MIN_CAR_SIZE}")
@@ -187,7 +254,9 @@ if "MAX_DISPLACEMENT" in _v:
 if "MAX_PARKED_DISPLACEMENT" in _v:
     MAX_PARKED_DISPLACEMENT = _v["MAX_PARKED_DISPLACEMENT"]
     print(f"MAX_PARKED_DISPLACEMENT = {MAX_PARKED_DISPLACEMENT}")
-
+if "MAX_STALE_FRAMES" in _v:
+    MAX_STALE_FRAMES = _v["MAX_STALE_FRAMES"]
+    print(f"MAX_STALE_FRAMES= {MAX_STALE_FRAMES}")
 
 ############################## Metadata ##############################
 _METADATA = {

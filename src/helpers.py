@@ -11,6 +11,8 @@ Created on Sun Apr 14 13:54:56 2023
 ## Native
 import string, sys, os
 import difflib
+from datetime import datetime
+
 print("Imported built-in stuff.")
 
 import cv2
@@ -49,8 +51,8 @@ ARABIC_DIGITS = list("٠١٢٣٤٥٦٧٨٩")
 ENGLISH_DIGITS = list("0123456789")
 
 TRANSLATION_MAP = [
-    ENGLISH_LETTERS + list("gad") + ENGLISH_DIGITS,
-    ARABIC_LETTERS + ARABIC_DIGITS
+    list("abcdefghijklmnopqrstuvwxyzgad0123456789"),
+    list("ابجدهوزحطيكلمنسعفصسرشتثخذضظغء٠١٢٣٤٥٦٧٨٩"),
 ]
 
 ARABIC_WORD_LIST = [
@@ -109,6 +111,26 @@ def resizeBbox(detections, outSize, inSize):
 # Simple cropping wrapper.
 def crop(image, coord):
     return image[int(coord[1]):int(coord[3]), int(coord[0]):int(coord[2])]
+
+def bindRectToRect(s, b):
+    x = bind(s[0], b[0], b[0] + b[2])
+    y = bind(s[1], b[1], b[1] + b[3])
+    if x + s[2] >= b[0] + b[2]:
+        w = (b[2] - x) - 1
+    else:
+        w = s[2]
+    if y + s[3] >= b[1] + b[3]:
+        h = (b[3] - y) - 1
+    else:
+        h = s[3]
+    print("s", s)
+    print("b", b)
+    print("n", x, y, w, h)
+    return [x, y, w, h]
+
+############################## Math Helpers ##############################
+def bind(x, lower, upper):
+    return max(x, min(x, upper))
 
 ############################## Human Readable Numbers ##############################
 def isNumberSafe(num):
@@ -214,16 +236,30 @@ def formatPaddleResult(result):
 #loop over str
 #if char one of map then new[char]=Map[0]->Map[1]
 def translateNumbersToArabic(english):
-    translated = english.copy()
-    for i, mapChar in enumerate(TRANSLATION_MAP[0]):
-        for j, char in enumerate(english):
-            if mapChar == char:
-                translated[j] = TRANSLATION_MAP[1][i]
-    return translated
+    translated = []
+    print(english, translated)
+    for enIndex, enStr in enumerate(english):
+        translated.append([""] * len(enStr))
+        enStr = enStr.lower()
+        print(english, translated)
+        print(enIndex, enStr)
+        for i, mapChar in enumerate(TRANSLATION_MAP[0]):
+            for j, char in enumerate(enStr):
+                if mapChar == char:
+                    translated[enIndex][j] = TRANSLATION_MAP[1][i]
+    print(translated)
+    print("=====")
+    return [b for a in translated for b in a]
         
-        
+#print(translateNumbersToArabic(["A123Hello1234"]))
 ############################## Plate Extraction Helpers ##############################
-def extractPlate(image, drawOnImage=True):
+_imageNameCounter = 0
+def extractPlate(image, drawOnImage=True, imageName="default"):
+    global _imageNameCounter
+    
+    if not config.PERFORM_OCR: 
+        return "OCR disabled.", image, False, "OCR disabled."
+    
     # Extract (and mark) plate locations.
     imageWithPlate, bboxes, scores, detTime = detector.yoloDet(image)
     ocrText = "Unknown"
@@ -231,6 +267,8 @@ def extractPlate(image, drawOnImage=True):
     ext = "Unknown"
     
     # Loop over all found plates per-image.
+    # Note: Currently only returns the last found text, drawing howver can
+    # handle multiple plates.
     for bbox in bboxes:
         # Crop plate out of original image.
         bbox = [bbox[0], bbox[1], bbox[2] + bbox[0], bbox[3] + bbox[1]]
@@ -238,6 +276,16 @@ def extractPlate(image, drawOnImage=True):
         if plateImage.shape[0] <= 0 or plateImage.shape[1] <= 0:
             print(f"Plate image too small. Plate shape: {plateImage.shape}")
             continue
+        #Debug save OCR plate.
+        if config.SAVE_OCR_INPUT_PLATE: 
+            if imageName == "default":
+                imageName = str(_imageNameCounter) + ".png"
+                _imageNameCounter += 1
+                
+            path = config.OCR_PLATE_IMAGE_PATH +\
+                    config.RUN_START_TIME + "/" + imageName
+            cv2.imwrite(path, plateImage)    
+        #Perform OCR.
         ocrText, isArabic, ext = ocr.performBilingualOcr(plateImage)
 
         #Draw the bounding-box of the license plate.

@@ -21,5 +21,7 @@ def onPress(key):
 ############################## Traffic Control ##############################
 #Should return True if traffic-light control is green.
 #False if red!
+#Second return value is a string representing the state of the traffic light.
 def allowPassage():
+    global mayPass
     return mayPass

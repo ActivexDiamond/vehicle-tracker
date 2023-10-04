@@ -16,18 +16,34 @@ import easyocr
 from easyocr import Reader
 print(f"Imported easyocr=={easyocr.__version__}")
 
+#import cv2
+
 ############################## Custom Modules ##############################
 import config
 import helpers
+  
+if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
+    from debugOcr import debugOcr
 
 ############################## Init ##############################
 # Setup both OCRs.
-englishOcr = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", rec_algorithm="CRNN", show_log=config.SHOW_ENGLISH_LOG)
-arabicOcr = paddleocr.PaddleOCR(use_angle_cls=True, lang="ar", rec_algorithm="SVTR_LCNet", show_log=config.SHOW_ARABIC_LOG)
-arabicReader = Reader(["ar"], gpu=-1 > 0)
-
+if config.PERFORM_OCR:
+    englishOcr = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", rec_algorithm="CRNN", show_log=config.SHOW_ENGLISH_LOG)
+    arabicOcr = paddleocr.PaddleOCR(use_angle_cls=True, lang="ar", rec_algorithm="SVTR_LCNet", show_log=config.SHOW_ARABIC_LOG)
+    arabicReader = Reader(["ar"], gpu=-1 > 0)
+else:
+    print("OCR disabled. Only dummy text will be provided.")
+    englishOcr = ""
+    arabicOcr = ""
+    arabicReader = ""
+    
 ############################## OCR Helpers ##############################
 def performBilingualOcr(image):
+    if not config.PERFORM_OCR: 
+        return "OCR disabled.", False, "OCR disabled."
+    if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
+        return altOcr(image)
+    
     # Perform OCR.
     enResult = englishOcr.ocr(image, cls=True)
     arResult = arabicOcr.ocr(image, cls=True)
@@ -44,12 +60,18 @@ def performBilingualOcr(image):
     arConfidence = 0
     if len(arScores) > 0:
         arConfidence = sum(arScores) / len(arScores)
+        
+        #If two texts of length 2+ chars exist, then they will be strictified,
+        #   so add %25 bonus for that.
+        if len(arTexts) > 1 and len(arTexts[0]) > 2 and len(arTexts[1]) > 2:
+            arConfidence += .25
 
     # Fallback in case OCR failed.
     ocrText = "Unknown"
     isArabic = False
     
-    #This is only needed so that debugInfo doesn't through an UnboundLocalError.
+    #This is only needed so that debugInfo doesn't throw an UnboundLocalError
+    #   if no modding happened.
     arNumbersModded = []
     
     # Check scores to deduce text language.
@@ -62,7 +84,7 @@ def performBilingualOcr(image):
             translatedNumbers = helpers.translateNumbersToArabic(enNumbers)
             ocrText = " ".join(arStrictTexts) + " " + " ".join(translatedNumbers)
         else:
-            #Is english with native numbers.
+            #Is arabic with native numbers.
             #Remember, the OCR returns a list that could contain multiple strings.
             if len(arNumbers) > 0:
                 arNumbersModded = [None] * len(arNumbers)

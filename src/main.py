@@ -44,7 +44,7 @@ def testImagesDir():
     
     # Load images.
     for f in files:
-        if f.endswith('.jpg') or f.endswith('.jpeg'):
+        if f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".png"):
             images.append(cv2.imread(config.IMAGE_PATH + f))
             imageNames.append(f)
             imagePaths.append(config.IMAGE_PATH + f)
@@ -56,16 +56,18 @@ def testImagesDir():
     file = open(config.IMAGE_TEST_RESULT_PATH, "w", encoding="utf-8")
     extFile = open(config.IMAGE_TEST_RESULT_PATH_EXTENDED, "w", encoding="utf-8")
     for i in range(0, len(images)):
-        text, img, isArabic, ext = helpers.extractPlate(images[i])
+        print(f"Performing OCR on image: {imageNames[i]}")
+        text, img, isArabic, ext = helpers.extractPlate(images[i], False, imageNames[i])
         
         string = f"img={imageNames[i]}, text={text}, isArabic={isArabic}\n"
         #print(string)
-        extString = string + ext + "\n=========\n"
+        extString = string + ext + "\n\n=================================================================================\n\n"
         
         file.write(string)
         extFile.write(extString)
         
         processedImages.append(img)
+        print("==============================")
     file.close()    
     extFile.close()
     

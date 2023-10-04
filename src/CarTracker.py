@@ -36,14 +36,16 @@ class CarTracker:
     def __init__(self):
         #List of registered cars.
         self.cars = []
+        
         #Only used for file names.
         self.violationCount = 0
+        self.screenshotCount = 0
 
         #A number of kernels used for object detection.
         self.kernalOp = numpy.ones((3,3), numpy.uint8)
         self.kernalOp2 = numpy.ones((5,5), numpy.uint8)
         self.kernalCl = numpy.ones((11,11), numpy.uint8)
-        self.detector = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+        self.detector = cv2.createBackgroundSubtractorMOG2(varThreshold=8)
         self.kernal_e = numpy.ones((5,5), numpy.uint8)
 
 ############################## Core API ##############################
@@ -54,6 +56,11 @@ class CarTracker:
         fps = video.get(cv2.CAP_PROP_FPS)
         frameCount = 0
         
+        if config.SKIP_FRAMES > 0:
+            for i in range(0, config.SKIP_FRAMES):
+                video.read()
+            frameCount = config.SKIP_FRAMES
+            
         while True:
             #Read the next frame.
             nxt, frame = video.read()
@@ -83,13 +90,15 @@ class CarTracker:
             contours,_ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             objects = []
             for c in contours:
+                if config.SHOW_BBOX:
+                    x, y, w, h = cv2.boundingRect(c)
+                    cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
                 #If large enough, consider to be a car.
                 if cv2.contourArea(c) > config.MIN_CAR_SIZE:
                     x, y, w, h = cv2.boundingRect(c)
                     objects.append([x, y, w, h])
                     #Used for drawing.                    
-                    if config.SHOW_BBOX:
-                        cv2.rectangle(roi, (x, y), (x+w, y+h), (0, 255, 0), 3)
+
                     if config.SHOW_BBOX_SIZE:
                         bs = helpers.formatNumber(cv2.contourArea(c))
                         cv2.putText(roi, f"bs={bs}",(x, y + 30), 
@@ -101,11 +110,12 @@ class CarTracker:
             self.processFrame(roi, objects, fps, frameCount)
             
             for car in self.cars:
-                x, y, w, h = car.getBbox()
-                cv2.rectangle(roi, (x, y), (x + w, y + h), car.color, 4)
-                
+                if config.SHOW_CAR_BBOX:
+                    x, y, w, h = car.getBbox()
+                    cv2.rectangle(roi, (x, y), (x + w, y + h), car.color, 4)
                 speed = car.getSpeed()
-                if speed != car.INVALID_STATE:
+                if config.SHOW_CAR_SPEED and speed != car.INVALID_STATE:
+                    x, y, w, h = car.getBbox()
                     cv2.putText(roi, f"{speed}km/h",(x, y - 15), 
                                 cv2.FONT_HERSHEY_PLAIN,
                                 7,
@@ -115,26 +125,38 @@ class CarTracker:
             #DAhmed has already been waiting for ages an exraw distance lines.
             h, w, _ = frame.shape
             a = config.ENTRY_LINE_Y
-            b = config.ENTRY_LINE_Y + config.LINE_Y_OFFSET
-            c = config.EXIT_LINE_Y
-            d = config.EXIT_LINE_Y + + config.LINE_Y_OFFSET
-            
-            color = (255, 0, 0)
+            b = config.EXIT_LINE_Y
             stroke = 4
             
+            color = (255, 0, 0)
             cv2.line(roi, (0, a), (w, a), color, stroke)
-            cv2.line(roi, (0, b), (w, b), color, stroke)
     
             color = (0, 255, 0)
-            cv2.line(roi, (0, c), (w, c), color, stroke)
-            cv2.line(roi, (0, d), (w, d), color, stroke)
+            cv2.line(roi, (0, b), (w, b), color, stroke)
             
             #Draw fps
-            cv2.putText(roi, f"FPS: {fps}",(0, 100), 
+            cv2.putText(roi, f"FPS: {fps:.0f}",(0, 100), 
                         cv2.FONT_HERSHEY_PLAIN,
                         7,
                         (0, 0, 255),
                         10)
+
+            #Draw traffic light
+            trafficLightColor = (0, 64, 0) if trafficLight.allowPassage() else (0, 0, 64)
+            cv2.rectangle(roi, (550, 40), (550 + 50, 40 + 50), trafficLightColor, -1)
+            
+            #Save screenshots
+            if config.TAKE_SCREENSHOTS:
+                for t in config.SCREENSHOT_TIMES:
+                    if t * 60 == frameCount:
+                        print("Taking screenshot of current frame!")
+                        self._takeScreenshot(roi)
+                        break
+                
+                if (config.EXIT_AFTER_SCREENSHOTS_COMPLETION and
+                        all(frameCount >= x * 60 for x in config.SCREENSHOT_TIMES)):
+                    print("Took all specified screenshots, exitting quickly.")
+                    break
             
             #Display to user.
             #cv2.namedWindow("roi", cv2.WINDOW_KEEPRATIO)
@@ -161,25 +183,25 @@ class CarTracker:
                     #Then `car` is the same object as `obj`, which has been processed before.
                     newObj = False
                     
-                    #Update its bbox and timers.
+                    #Update its bbox.
                     car.setBbox(obj)
-                    if cy >= config.ENTRY_LINE_Y and cy <= config.ENTRY_LINE_Y + config.LINE_Y_OFFSET:
+                    
+                    #Update its timers.
+                    x, y, w, h = car.getBbox()
+                    
+                    if y <= config.ENTRY_LINE_Y and y + h >= config.ENTRY_LINE_Y:
                         #print("Setting start time")
                         car.setStartTime(frameCount)
                             
-                    if cy >= config.EXIT_LINE_Y and cy <= config.EXIT_LINE_Y + config.LINE_Y_OFFSET:
+                    if y <= config.EXIT_LINE_Y and y + h >= config.EXIT_LINE_Y:
                         #print("Setting end time")
                         car.setEndTime(frameCount)
                         #print(f"[DEBUG] Total time: {car.getTime()} Speed {car.getSpeed()}")
                         
-                    if dist < config.MAX_PARKED_DISPLACEMENT and not car.isProcessed():
-                        car.incrementStillFrames()
-                        if car.getStillFrames() >=  config.MAX_PARK_TIME * fps:    
-                            car.setProcessed(True)
-                            self.onViolation(car, frame, self.VTYPE_PARKING)
-                    else:
-                        car.resetStillFrames()
-                    
+                    #if dist < config.MAX_PARKED_DISPLACEMENT and not car.isProcessed():
+                    #    car.setProcessed(True)
+                    #    self.onViolation(car, frame, self.VTYPE_PARKING)
+                
             #If newly detected object, create a car instance for it.
             if newObj:
                 print("New object entered frame.")
@@ -225,10 +247,13 @@ class CarTracker:
                 cx, cy = self._getCenter(obj)
                 dist = math.hypot(cx - carCx, cy - carCy)
                 if dist < config.MAX_DISPLACEMENT:
+                    car.resetStaleFrames()
                     foundMatch = True
                     break
             if not foundMatch:
-                del self.cars[i]        
+                car.incrementStaleFrames()
+                if car.isStale():
+                    del self.cars[i]        
         
 ############################## Violation Methods ##############################
     def checkViolation(self, car, frame):
@@ -249,7 +274,7 @@ class CarTracker:
         
         #Crop car out of the image.
         x, y, w, h = car.getBbox()
-        image = frame[y - 5:y + h + 5, x - 5:x + w + 5]
+        image = frame[y:y + h, x:x + w]
         
         #Fetch plate info.
         plateText, img, isArabic, _ = helpers.extractPlate(image, False)
@@ -284,4 +309,12 @@ class CarTracker:
         x, y, w, h = obj
         return (x * 2 + w) // 2, (y * 2 + h) // 2
     
+    def _takeScreenshot(self, image):
+        self.screenshotCount += 1
+        imagePath = config.SCREENSHOT_PATH +\
+                config.SCREENSHOT_NAME_PREFIX + config.RUN_START_TIME + "/" +\
+                str(self.screenshotCount) + ".png"
+                
+        cv2.imwrite(imagePath, image)
+        
 ############################## Getters ##############################

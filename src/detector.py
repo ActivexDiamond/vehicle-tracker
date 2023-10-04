@@ -27,18 +27,20 @@ import config
 import helpers
 
 ############################## Load Darknet NN ##############################
-network, classNames, classColors = darknet.load_network(config.CONFIG_FILE,
-        config.DATA_FILE,
-        config.WEIGHTS_FILE,
-        batch_size=config.BATCH_SIZE)
-
-#config.CONFIG_FILE,
-#config.DATA_FILE,
-#config.BATCH_SIZE,
-#config.WEIGHTS_FILE,
-
+if config.PERFORM_OCR:
+    network, classNames, classColors = darknet.load_network(config.CONFIG_FILE,
+            config.DATA_FILE,
+            config.WEIGHTS_FILE,
+            batch_size=config.BATCH_SIZE)
+else:
+    network = ""
+    classNames = ""
+    classColors = ""
+    
 ############################## YOLO Detection ##############################
 def yoloDet(frame):
+    if not config.PERFORM_OCR: return frame, [], [], 0
+    
     # Used to track execution time.
     prevTime = time.time()
 
@@ -71,4 +73,5 @@ def yoloDet(frame):
     inSize = imageResized.shape[:2]
     coord, scores = helpers.resizeBbox(detections, outSize, inSize)
     imageWithPlate = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    print(f"Darknet found plates: {coord}")
     return imageWithPlate, coord, scores, detTime
