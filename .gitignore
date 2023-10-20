@@ -4,8 +4,11 @@ tmp
 darknet/
 data/
 yolov4_obj_best.weights
-
-test/
+test/videos1/
+test/ffmpeg-fix-test/
+test/phone-videos/
+test/*video*/
+test/screens_side-day3/
 debug-output/
 screenshots/
 secret.py
