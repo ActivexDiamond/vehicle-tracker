@@ -43,6 +43,9 @@ import config
 import detector
 import ocr
 
+if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
+    from debugOcr import debugOcr
+
 ############################## Constants ##############################
 ARABIC_LETTERS = list("ابجدهوزحطيكلمنسعفصقرشتثخذضظغء")
 ENGLISH_LETTERS = list("abcdefghijklmnopqrstuvwxyz")
@@ -216,6 +219,10 @@ def strictifyArabicTexts(texts):
 ############################## OCR-specific Helpers ##############################
 def formatPaddleResult(result):
     texts, numbers, scores = [], [], []
+    print (result)
+    if result[0] is None:
+        print("blank list. returning.")
+        return texts, numbers, scores
     for i in range(len(result)):
         for line in result[i]:
             string = line[1][0]
@@ -259,6 +266,10 @@ def extractPlate(image, drawOnImage=True, imageName="default"):
     
     if not config.PERFORM_OCR: 
         return "OCR disabled.", image, False, "OCR disabled."
+    if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
+        print("Performing debug OCR.")
+        ocrText,isArabic, ext = debugOcr(image)
+        return ocrText, image, isArabic, ext
     
     # Extract (and mark) plate locations.
     imageWithPlate, bboxes, scores, detTime = detector.yoloDet(image)

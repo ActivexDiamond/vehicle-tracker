@@ -7,23 +7,27 @@ Created on Sun Apr 17 17:15:25 2023
 @author: Dulfiqar 'activexdiamond' H. Al-Safi
 """
 
-
-############################## Dependencies ##############################
-import paddleocr
-print(f"Imported paddleocr=={paddleocr.__version__}")
-
-import easyocr 
-from easyocr import Reader
-print(f"Imported easyocr=={easyocr.__version__}")
-
-#import cv2
-
 ############################## Custom Modules ##############################
 import config
 import helpers
   
 if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
     from debugOcr import debugOcr
+
+############################## Dependencies ##############################
+import math
+
+import numpy
+
+if config.PERFORM_OCR:
+    import paddleocr
+    print(f"Imported paddleocr=={paddleocr.__version__}")
+    
+    import easyocr 
+    from easyocr import Reader
+    print(f"Imported easyocr=={easyocr.__version__}")
+
+#import cv2
 
 ############################## Init ##############################
 # Setup both OCRs.
@@ -36,23 +40,61 @@ else:
     englishOcr = ""
     arabicOcr = ""
     arabicReader = ""
+
+############################## Color Detection ##############################
+def colorDistance(color1, color2):
+    #Normalize ranges
+    n1 = numpy.divide(color1, 255)
+    n2 = numpy.divide(color2, 255)
+            #d= math.sqrt((x1−x2)^2 + (y1−y2)^2 + (z1−z2)^2)
+    rm = 0.5 * (n1[0] + n2[0])
+    d = sum((2 + rm, 4, 3 - rm) * (n1 - n2) ** 2) ** 0.5
+    return d
+
+import cv2
+def typeFromColor(image):
+    h, w, _ = image.shape
+    colorWidth = math.floor(w * config.COLOR_AREA_PERCENTAGE)
+    colorRegion = image[0:h, 0:colorWidth]
+    cv2.imwrite("im.png", image)
+    cv2.imwrite("col.png", colorRegion)
+    averageColor = numpy.mean(colorRegion, axis=(0,1))
+    minDistance = 1e9
+    plateType = "unkown"
+    for name, color in config.COLOR_TYPES.items():
+        dist = colorDistance(averageColor, color)
+        print(averageColor, color, dist)
+        if dist < minDistance:
+            minDistance = dist
+            plateType = name
+            print("new min. Name is now", name)
+    return plateType
+            
     
 ############################## OCR Helpers ##############################
 def performBilingualOcr(image):
     if not config.PERFORM_OCR: 
+        print("OCR disabled, returning.")
         return "OCR disabled.", False, "OCR disabled."
     if hasattr(config, "DEBUG_OCR") and config.DEBUG_OCR:
-        return altOcr(image)
+        print("Performing debug OCR.")
+        return debugOcr(image)
+    print("Performing bilingual OCR")
     
     # Perform OCR.
+    print("Performing EN OCR.")
     enResult = englishOcr.ocr(image, cls=True)
+    print("Performing AR OCR.")
     arResult = arabicOcr.ocr(image, cls=True)
     
     # Format paddle string into friendlier format.
+    print("Formatting EN OCR result.")
     enTexts, enNumbers, enScores = helpers.formatPaddleResult(enResult)
+    print("Formatting AR OCR result.")
     arTexts, arNumbers, arScores = helpers.formatPaddleResult(arResult)
+    print("Strictifying AR.")
     arStrictTexts = helpers.strictifyArabicTexts(arTexts)
-    
+    print("==============")
     # Check if OCRs occured between computing their means.
     enConfidence = 0
     if len(enScores) > 0:
@@ -96,6 +138,8 @@ def performBilingualOcr(image):
             ocrText = " ".join(arStrictTexts) + " " + " ".join(arNumbersModded)
         isArabic = True
     
+    if not isArabic:
+        ocrText = ocrText + " (" + typeFromColor(image) + ")"
     debugInfo = (f"enConfidence={enConfidence}\tenTexts={enTexts}\tenNumbers={enNumbers}\n" +
     f"arConfidence={arConfidence}\tarTexts={arTexts}\tarNumbers={arNumbers}\n" +
     f"arNumbersModded={arNumbersModded}\n" +

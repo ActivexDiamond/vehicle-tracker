@@ -5,11 +5,13 @@ darknet/
 data/
 yolov4_obj_best.weights
 test/videos1/
-test/ffmpeg-fix-test/
+test/ffmpeg-fix/
 test/phone-videos/
 test/*video*/
 test/screens_side-day3/
 debug-output/
+mog2_debug
+
 screenshots/
 secret.py
 src/secret.py

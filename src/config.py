@@ -8,6 +8,11 @@ Created on Fri Mar 10 05:01:38 2023
 """
 
 ############################## Env Fixes/Mods ##############################
+#import importlib.util
+#if importlib.util.find_spec("icecream") is not None:
+#    from icecream import install
+#    install()
+    
 #IMPORTANT: paddleocr must be imported before darknet otherwise it complains 
 # about protobuf-version issues. I hope this is fixed once an update rolls
 # out for either of those libs.
@@ -42,8 +47,9 @@ import secret
 ############################## Debugging ##############################
 SEND_SMS = False
 
+DEBUG_COLORS = False                   #Overrides DEBUG_VIDEO
 DEBUG_VIDEO = True
-DEBUG_USE_ALT_OCR = False
+DEBUG_OCR = False
 
 DATA_DISPLAY_W = 3
 DATA_DISPLAY_H = 4
@@ -56,9 +62,14 @@ SHOW_CAR_SPEED = True
 
 PERFORM_OCR = False
 
+TAKE_MOG2_SCREENSHOTS = False
+MOG2_SCREENSHOT_TIMES = [23, 23.1, 23.2, 23.3, 23.4, 23.5]
+
+MOG2_SCREENSHOT_PATH = "mog2_debug/"
+
 #Skip forward X frames of the video. Useful for debugging particular scenes.
 #Set to 0 to disable.
-SKIP_FRAMES = 0     #round(25 * 13.2)
+SKIP_FRAMES = 0         #round(25 * 13.2)
 
 SCREENSHOT_TIMES = [2, 3.8, 6]              #In seconds.
 SCREENSHOT_NAME_PREFIX = ""
@@ -76,6 +87,11 @@ if not os.path.exists(SCREENSHOT_PATH):
 if not os.path.exists(SCREENSHOT_PATH + SCREENSHOT_NAME_PREFIX + RUN_START_TIME + "/"):
     os.makedirs(SCREENSHOT_PATH + SCREENSHOT_NAME_PREFIX + RUN_START_TIME + "/")
 
+if TAKE_MOG2_SCREENSHOTS:
+    if not os.path.exists(MOG2_SCREENSHOT_PATH):
+        os.makedirs(MOG2_SCREENSHOT_PATH)
+    if not os.path.exists(MOG2_SCREENSHOT_PATH + RUN_START_TIME + "/"):
+        os.makedirs(MOG2_SCREENSHOT_PATH + RUN_START_TIME + "/")
     
 ############################## SMS ##############################
 TWILIO_SID = secret.TWILIO_SID
@@ -91,7 +107,8 @@ TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ############################## Image Paths ##############################
 #IMAGE_PATH = "./test/images2/"
-IMAGE_PATH = "./test/images3/"
+#IMAGE_PATH = "./test/images3/"
+IMAGE_PATH = "./test/images4/"
 
 IMAGE_TEST_RESULT_PATH = "./output/image-test-result.txt"
 IMAGE_TEST_RESULT_PATH_EXTENDED = "./output/image-test-result-extended.txt"
@@ -103,6 +120,24 @@ WEIGHTS_FILE = "yolov4_obj_best.weights"
 
 BATCH_SIZE = 1
 CONFIDENCE_THRESHOLD = 0.6
+
+############################## Color (Plate Type)##############################
+COLOR_AREA_PERCENTAGE = 0.0756646216769
+
+#In BGR Format!
+WHITE  = [255, 255, 255]
+RED    = [0,   0,   255]
+YELLOW = [0,   255, 255]
+BLUE   = [255, 0,   0]
+GREEN  = [0,   255, 0]
+
+COLOR_TYPES = {
+    "خصوصي": WHITE,
+    "تكسي": RED,
+    "حمل": YELLOW,
+    "حكومي": BLUE,
+    "انشائي": GREEN,
+}
 
 ############################## OCR ##############################
 MIN_CONFIDENCE = 0.2
@@ -141,6 +176,9 @@ VIOLATION_IMAGE_PATH = "./output/"
 VIOLATION_PLATE_PATH = "./output/"
 
 MIN_CAR_SIZE = 1000
+
+#Gradience difference used for the MOG2 function.
+VAR_THRESHOLD = 8
 
 #Number of frames for car to have no matching objects before it is deleted.
 MAX_STALE_FRAMES = 1
@@ -193,38 +231,31 @@ VIDEOS = [
         "MAX_DISPLACEMENT": 200,
         "MAX_PARKED_DISPLACEMENT": 10,
     },{ # 3
-        "VIDEO_PATH": "./test/phone-videos/forward1.mp4",
+        "VIDEO_PATH": "./test/ffmpeg-fix/forward1_fixed.mp4",
         "MAX_SPEED": 75,
         "ENTRY_LINE_Y": 1600,
-        "EXIT_LINE_Y": 1100,
-        "LINES_DISTANCE": 80 * 0.44,
-        "MIN_CAR_SIZE": 25e3,
+        "EXIT_LINE_Y": 700,
+        "LINES_DISTANCE": 60 * 0.66,
+        "MIN_CAR_SIZE": 200e3,
         "MAX_DISPLACEMENT": 200,
         "MAX_PARKED_DISPLACEMENT": 10,
+        "VAR_THRESHOLD": 32,
     },{ # 4
-        "VIDEO_PATH": "./test/phone-videos/forward2.mp4",
-        "MAX_SPEED": 75,
+        "VIDEO_PATH": "./test/ffmpeg-fix/forward2_fixed.mp4",
+        "MAX_SPEED": 73,
         "ENTRY_LINE_Y": 1600,
-        "EXIT_LINE_Y": 1100,
-        "LINES_DISTANCE": 80 * 0.44,
-        "MIN_CAR_SIZE": 25e3,
+        "EXIT_LINE_Y": 700,
+        "LINES_DISTANCE": 60 * 0.66,
+        "MIN_CAR_SIZE": 200e3,
         "MAX_DISPLACEMENT": 200,
         "MAX_PARKED_DISPLACEMENT": 10,
-    },{ # 5
-        "VIDEO_PATH": "./test/phone-videos/reverse.mp4",
-        "MAX_SPEED": 75,
-        "ENTRY_LINE_Y": 1600,
-        "EXIT_LINE_Y": 1100,
-        "LINES_DISTANCE": 80 * 0.44,
-        "MIN_CAR_SIZE": 25e3,
-        "MAX_DISPLACEMENT": 200,
-        "MAX_PARKED_DISPLACEMENT": 10,
+        "VAR_THRESHOLD": 32,
     }
 ]
 
 #Note: 4k is 3840 x 2160
 
-SELECTED_VIDEO = 3
+SELECTED_VIDEO = 4
 _v = VIDEOS[SELECTED_VIDEO]
 VIDEO_PATH = _v["VIDEO_PATH"]
 ENTRY_LINE_Y = _v["ENTRY_LINE_Y"]
@@ -244,7 +275,7 @@ if "FRAME_ROI" in _v:
 #This is useful for videos with higher/lower resolutions.
 if "MAX_SPEED" in _v:
     MAX_SPEED = _v["MAX_SPEED"]
-    print(f"MAX_SPEED= {MAX_SPEED}")
+    print(f"MAX_SPEED       = {MAX_SPEED}")
 if "MIN_CAR_SIZE" in _v:
     MIN_CAR_SIZE = _v["MIN_CAR_SIZE"]
     print(f"MIN_CAR_SIZE    = {MIN_CAR_SIZE}")
@@ -254,10 +285,13 @@ if "MAX_DISPLACEMENT" in _v:
 if "MAX_PARKED_DISPLACEMENT" in _v:
     MAX_PARKED_DISPLACEMENT = _v["MAX_PARKED_DISPLACEMENT"]
     print(f"MAX_PARKED_DISPLACEMENT = {MAX_PARKED_DISPLACEMENT}")
+if "VAR_THRESHOLD" in _v:
+    VAR_THRESHOLD = _v["VAR_THRESHOLD"]
+    print(f"VAR_THRESHOLD   = {VAR_THRESHOLD}")
 if "MAX_STALE_FRAMES" in _v:
     MAX_STALE_FRAMES = _v["MAX_STALE_FRAMES"]
     print(f"MAX_STALE_FRAMES= {MAX_STALE_FRAMES}")
-
+    
 ############################## Metadata ##############################
 _METADATA = {
     "TITLE": "Traffic Watcher",

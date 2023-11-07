@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Sun Apr 23 22:03:49 2023
@@ -40,13 +40,27 @@ class CarTracker:
         #Only used for file names.
         self.violationCount = 0
         self.screenshotCount = 0
+        self.mog2ScreenshotCount = 0
 
         #A number of kernels used for object detection.
         self.kernalOp = numpy.ones((3,3), numpy.uint8)
         self.kernalOp2 = numpy.ones((5,5), numpy.uint8)
         self.kernalCl = numpy.ones((11,11), numpy.uint8)
-        self.detector = cv2.createBackgroundSubtractorMOG2(varThreshold=8)
         self.kernal_e = numpy.ones((5,5), numpy.uint8)
+        
+        self.detector = cv2.createBackgroundSubtractorMOG2(
+                varThreshold=config.VAR_THRESHOLD,
+                detectShadows=False)
+        #print(self.detector.getShadowThreshold())   #0.5
+        #self.detector.setShadowThreshold(0.03)
+        
+        #print(self.detector.getShadowValue())  #127
+        #self.detector.setShadowValue(5)
+        
+        #print(self.detector.getNMixtures())    #5
+        #self.detector.setNMixtures(3)
+        
+        
 
 ############################## Core API ##############################
     #Called once per frame with a list of objs in that frame.
@@ -67,7 +81,6 @@ class CarTracker:
             if not nxt: break
             frameCount += 1
             #print("Processing next frame.")
-            
             #Scale down a bit, and get dims.
             #frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
             
@@ -79,15 +92,44 @@ class CarTracker:
             else:
                 roi = frame
             #Apply object detection.
-            detectionsMask = self.detector.apply(roi)
+            '''
+            rgb_planes = cv2.split(roi)
+
+            result_planes = []
+            result_norm_planes = []
+            for plane in rgb_planes:
+                dilated_img = cv2.dilate(plane, numpy.ones((7,7), numpy.uint8))
+                bg_img = cv2.medianBlur(dilated_img, 21)
+                diff_img = 255 - cv2.absdiff(plane, bg_img)
+                norm_img = cv2.normalize(diff_img,None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+                result_planes.append(diff_img)
+                result_norm_planes.append(norm_img)
+            result = cv2.merge(result_planes)
+            result_norm = cv2.merge(result_norm_planes)
+            '''          
+            #th = cv2.adaptiveThreshold(gray,255, cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,11,2)
+            #img_dilation = cv2.dilate(img, kernel, iterations=1)
+            _, thresholdRoi = cv2.threshold(roi, 180, 255, cv2.THRESH_BINARY)
+            detectionsMask = self.detector.apply(thresholdRoi)
+            
             #Apply a threshold layer, and 2 morphology layers to extract objects.
             _, binary = cv2.threshold(detectionsMask, 200, 255, cv2.THRESH_BINARY)
             mask1 = cv2.morphologyEx(binary, cv2.MORPH_OPEN, self.kernalOp)
             mask2 = cv2.morphologyEx(mask1, cv2.MORPH_CLOSE, self.kernalCl)
             #Final image with object highlights.
-            image = cv2.erode(mask2, self.kernal_e)
-    
-            contours,_ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            eroded = cv2.erode(mask2, self.kernal_e)
+            contours,_ = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            if config.TAKE_MOG2_SCREENSHOTS and  (frameCount / fps) in config.MOG2_SCREENSHOT_TIMES:
+                print("Taking screenshot of MOG2 masks!")
+                self._takeMog2Screenshot(roi, thresholdRoi, detectionsMask,
+                                         mask1, mask2, eroded)
+            if (config.EXIT_AFTER_SCREENSHOTS_COMPLETION and
+                    all(frameCount >= x * fps for x in config.MOG2_SCREENSHOT_TIMES) and
+                    all(frameCount >= x * fps for x in config.SCREENSHOT_TIMES)):
+                print("Took all specified MOG2 screenshots, exitting quickly.")
+                break
+            
             objects = []
             for c in contours:
                 if config.SHOW_BBOX:
@@ -98,7 +140,6 @@ class CarTracker:
                     x, y, w, h = cv2.boundingRect(c)
                     objects.append([x, y, w, h])
                     #Used for drawing.                    
-
                     if config.SHOW_BBOX_SIZE:
                         bs = helpers.formatNumber(cv2.contourArea(c))
                         cv2.putText(roi, f"bs={bs}",(x, y + 30), 
@@ -108,7 +149,6 @@ class CarTracker:
                                     10)                    
             #Compute speeds and check for violations.
             self.processFrame(roi, objects, fps, frameCount)
-            
             for car in self.cars:
                 if config.SHOW_CAR_BBOX:
                     x, y, w, h = car.getBbox()
@@ -140,21 +180,17 @@ class CarTracker:
                         7,
                         (0, 0, 255),
                         10)
-
             #Draw traffic light
             trafficLightColor = (0, 64, 0) if trafficLight.allowPassage() else (0, 0, 64)
             cv2.rectangle(roi, (550, 40), (550 + 50, 40 + 50), trafficLightColor, -1)
             
             #Save screenshots
-            if config.TAKE_SCREENSHOTS:
-                for t in config.SCREENSHOT_TIMES:
-                    if t * 60 == frameCount:
-                        print("Taking screenshot of current frame!")
-                        self._takeScreenshot(roi)
-                        break
-                
+            if config.TAKE_SCREENSHOTS and (frameCount / fps) in config.SCREENSHOT_TIMES:
+                print("Taking screenshot of current frame!")
+                self._takeScreenshot(roi)
                 if (config.EXIT_AFTER_SCREENSHOTS_COMPLETION and
-                        all(frameCount >= x * 60 for x in config.SCREENSHOT_TIMES)):
+                        all(frameCount >= x * fps for x in config.MOG2_SCREENSHOT_TIMES) and
+                        all(frameCount >= x * fps for x in config.SCREENSHOT_TIMES)):
                     print("Took all specified screenshots, exitting quickly.")
                     break
             
@@ -167,7 +203,6 @@ class CarTracker:
             if key == ord('r'): trafficLight.onPress('r')
         video.release()
         cv2.destroyAllWindows()
-
     def processFrame(self, frame, objs, fps, frameCount):
         #Loop over all objs in the current frame.
         #print("Looping over all objects an checking for speeds")
@@ -316,5 +351,16 @@ class CarTracker:
                 str(self.screenshotCount) + ".png"
                 
         cv2.imwrite(imagePath, image)
+    
+    def _takeMog2Screenshot(self, roi, thresholdRoi, detectionsMask, mask1, mask2, eroded):
+        self.mog2ScreenshotCount += 1
+        path = config.MOG2_SCREENSHOT_PATH + config.RUN_START_TIME + "/" +\
+                str(self.mog2ScreenshotCount)
+        cv2.imwrite(path + " roi.png",    roi) 
+        cv2.imwrite(path + " thresholdRoi.png",    thresholdRoi) 
+        cv2.imwrite(path + " detectionsMask.png",  detectionsMask)
+        cv2.imwrite(path + " mask1.png",           mask1)
+        cv2.imwrite(path + " mask2.png",           mask2)
+        cv2.imwrite(path + " eroded.png",          eroded)
         
 ############################## Getters ##############################

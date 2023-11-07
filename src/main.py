@@ -32,9 +32,38 @@ import paddleocr
 
 ############################## Custom Modules ##############################
 import helpers
+if config.DEBUG_COLORS:
+    import ocr
 from CarTracker import CarTracker
 
 ############################## Main Functions ##############################
+def testColors():
+    #Fetch all images in the image directory.
+    files = os.listdir(config.IMAGE_PATH)
+    images = []
+    imageNames = []
+    imagePaths  = []
+    
+    # Load images.
+    for f in files:
+        if f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".png"):
+            images.append(cv2.imread(config.IMAGE_PATH + f))
+            imageNames.append(f)
+            imagePaths.append(config.IMAGE_PATH + f)
+    
+                
+    # Plate recognition and OCR.
+    for i in range(0, len(images)):
+        print(f"Performing OCR on image: {imageNames[i]}")
+        ocrText, isArabic, ext = ocr.performBilingualOcr(images[i])
+        
+        string = f"img={imageNames[i]}, text={ocrText}, isArabic={isArabic}\n"
+        print(string)
+        
+        print("==============================")
+    
+    print(f"Processed a total of {len(images)} images.")
+    
 def testImagesDir():
     #Fetch all images in the image directory.
     files = os.listdir(config.IMAGE_PATH)
@@ -91,7 +120,9 @@ def testVideo():
     
 ############################## Main Flow ##############################
 
-if config.DEBUG_VIDEO:
+if config.DEBUG_COLORS:
+    testColors()
+elif config.DEBUG_VIDEO:
     testVideo()
 else:
     testImagesDir()
